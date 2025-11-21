@@ -70,6 +70,8 @@ func (r *UserRepository) ListAll() ([]model.User, error) {
 		return nil, errors.New("UNABLE TO GET ALL USERS")
 	}
 
+	defer result.Close()
+
 	users := []model.User{}
 
 	for result.Next() {
