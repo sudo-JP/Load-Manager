@@ -7,6 +7,8 @@ It’s built entirely in **Go**, partly to learn the language and partly to expl
 
 The project is organized into three independent Go modules:
 
-- `/backend`: Basic Go HTTP server (simulates a small service w/ Postgres)
+- `backend/`: Basic Go HTTP server (simulates a small service w/ Postgres)
 - `load-manager/`: Load balancer / scheduler that routes traffic to backends
-- `/test`: Stress tester that floods the system to measure performance
+- `test/`: Stress tester that floods the system to measure performance
+
+Also I tried some cryptography in `backend/internal/hash`
