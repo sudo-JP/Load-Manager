@@ -110,7 +110,7 @@ func SHA256(str string) string {
 		// First word is taken from the block 
 		for j := range FirstWord {
     		W[j] = 	uint32(block[4*j]) << 24
-    		W[j] |= uint32(block[4*j+1])<< 16 
+    		W[j] |= uint32(block[4*j+1]) << 16 
     		W[j] |= uint32(block[4*j+2]) << 8 
     		W[j] |= uint32(block[4*j+3])
 		}	
