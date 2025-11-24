@@ -1,14 +1,17 @@
 package repository
 
 import (
+	"context"
+
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 )
 
-type UserInterface interface {
-	Create(u *model.User) (bool, error)
-	GetByEmail(email string) (*model.User, error)
-	UpdatePassword(email string, password string) (bool, error)
-	UpdateUsername(email string, name string) (bool, error)
-	DeleteUser(email string) (bool, error)
-	ListAll() ([]model.User, error)
+type UserRepositoryInterface interface {
+	Create(ctx context.Context, u *model.User) (bool, error)
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
+	UpdatePassword(ctx context.Context, email string, password string) (bool, error)
+	UpdateUsername(ctx context.Context, email string, name string) (bool, error)
+	DeleteUser(ctx context.Context, email string) (bool, error)
+	ListAll(ctx context.Context) ([]model.User, error)
 }
+

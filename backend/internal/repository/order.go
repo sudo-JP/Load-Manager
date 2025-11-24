@@ -11,9 +11,9 @@ type OrderRepository struct {
     db *database.Database
 }
 
-func (r *OrderRepository) Create(order *model.Order) (bool, error) {
+func (r *OrderRepository) Create(ctx context.Context, order *model.Order) (bool, error) {
 	err := r.db.Pool.QueryRow(
-		context.Background(),
+		ctx,
 		"INSERT INTO orders (user_id, product, quantity) VALUES ($1, $2, $3) RETURNING order_id, created_at;",
 		order.UserId, order.Product, order.Quantity,
 	).Scan(&order.OrderId, &order.CreatedAt)
@@ -25,11 +25,11 @@ func (r *OrderRepository) Create(order *model.Order) (bool, error) {
 	return true, nil
 }
 
-func (r *OrderRepository) GetById(orderId int) (*model.Order, error) {
+func (r *OrderRepository) GetById(ctx context.Context, orderId int) (*model.Order, error) {
 	var o model.Order
 
 	err := r.db.Pool.QueryRow(
-		context.Background(),
+		ctx,
 		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE order_id = $1;",
 		orderId,
 	).Scan(&o.OrderId, &o.UserId, &o.Product, &o.Quantity, &o.CreatedAt)
@@ -41,9 +41,9 @@ func (r *OrderRepository) GetById(orderId int) (*model.Order, error) {
 	return &o, nil
 }
 
-func (r *OrderRepository) GetByUser(userId int) ([]model.Order, error) {
+func (r *OrderRepository) GetByUser(ctx context.Context, userId int) ([]model.Order, error) {
 	rows, err := r.db.Pool.Query(
-		context.Background(),
+		ctx,
 		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE user_id = $1",
 		userId,
 	)
@@ -64,9 +64,9 @@ func (r *OrderRepository) GetByUser(userId int) ([]model.Order, error) {
 	return orders, nil
 }
 
-func (r *OrderRepository) Update(order model.Order) (bool, error) {
+func (r *OrderRepository) Update(ctx context.Context, order model.Order) (bool, error) {
 	result, err := r.db.Pool.Exec(
-		context.Background(),
+		ctx,
 		"UPDATE orders SET product = $1, quantity = $2 WHERE order_id = $3",
 		order.Product, order.Quantity, order.OrderId,
 	)
@@ -82,9 +82,9 @@ func (r *OrderRepository) Update(order model.Order) (bool, error) {
 }
 
 
-func (r *OrderRepository) Delete(orderId int) (bool, error) {
+func (r *OrderRepository) Delete(ctx context.Context, orderId int) (bool, error) {
 	result, err := r.db.Pool.Exec(
-		context.Background(),
+		ctx,
 		"DELETE FROM orders WHERE order_id = $1",
 		orderId,
 	)
@@ -99,9 +99,9 @@ func (r *OrderRepository) Delete(orderId int) (bool, error) {
 	return true, nil
 }
 
-func (r *OrderRepository) ListAll() ([]model.Order, error) {
+func (r *OrderRepository) ListAll(ctx context.Context) ([]model.Order, error) {
 	rows, err := r.db.Pool.Query(
-		context.Background(),
+		ctx,
 		"SELECT order_id, user_id, product, quantity, created_at FROM orders",
 	)
 	if err != nil {
@@ -119,4 +119,8 @@ func (r *OrderRepository) ListAll() ([]model.Order, error) {
 	}
 
 	return orders, nil
+}
+
+func NewOrderRepository(db *database.Database) OrderRepositoryInterface {
+	return &OrderRepository{ db: db }
 }
