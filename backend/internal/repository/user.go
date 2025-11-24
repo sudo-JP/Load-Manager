@@ -14,9 +14,9 @@ type UserRepository struct {
 }
 
 
-func (r *UserRepository) Create(u *model.User) (bool, error) {
+func (r *UserRepository) Create(ctx context.Context, u *model.User) (bool, error) {
 	err := r.db.Pool.QueryRow(
-		context.Background(),
+		ctx, 
 		"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING user_id;",
 		u.Name, u.Email, u.Password,
 	).Scan(&u.UserId)
@@ -35,13 +35,13 @@ func (r *UserRepository) Create(u *model.User) (bool, error) {
 }
 
 
-func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var name string 
 	var password string 
 	var user_id int 
 
 	err := r.db.Pool.QueryRow(
-		context.Background(), 
+		ctx,
 		"SELECT name, password, user_id FROM users WHERE email = $1;",
 		email,
 	).Scan(&name, &password, &user_id)
@@ -60,9 +60,9 @@ func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 	return u, nil
 }
 
-func (r *UserRepository) ListAll() ([]model.User, error) {
+func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
 	result, err := r.db.Pool.Query(
-		context.Background(), 
+		ctx, 
 		"SELECT user_id, name, email, password from users;", 
 	)
 
@@ -86,9 +86,9 @@ func (r *UserRepository) ListAll() ([]model.User, error) {
 	return users, nil 
 }
 
-func (r *UserRepository) DeleteUser(email string) (bool, error) {
+func (r *UserRepository) DeleteUser(ctx context.Context, email string) (bool, error) {
 	result, err := r.db.Pool.Exec(
-		context.Background(), 
+		ctx, 
 		"DELETE FROM users WHERE email = $1;", 
 		email, 
 	)
@@ -103,9 +103,9 @@ func (r *UserRepository) DeleteUser(email string) (bool, error) {
 	return true, nil 
 }
 
-func (r *UserRepository) UpdatePassword(email string, password string) (bool, error) {
+func (r *UserRepository) UpdatePassword(ctx context.Context, email string, password string) (bool, error) {
 	result, err := r.db.Pool.Exec(
-		context.Background(), 
+		ctx, 
 		"UPDATE users SET password = $1 WHERE email = $2;", 
 		password, email,
 	)
@@ -121,9 +121,9 @@ func (r *UserRepository) UpdatePassword(email string, password string) (bool, er
 	return true, nil 
 }
 
-func (r *UserRepository) UpdateUsername(email string, name string) (bool, error) {
+func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name string) (bool, error) {
 	result, err := r.db.Pool.Exec(
-		context.Background(), 
+		ctx, 
 		"UPDATE users SET name = $1 WHERE email = $2;", 
 		name, email,
 	)
@@ -137,4 +137,9 @@ func (r *UserRepository) UpdateUsername(email string, name string) (bool, error)
 	}
 
 	return true, nil 
+}
+
+
+func NewUserRepository(db *database.Database) UserRepositoryInterface {
+	return &UserRepository{ db: db }	
 }
