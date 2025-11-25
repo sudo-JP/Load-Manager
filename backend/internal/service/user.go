@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"runtime"
 	"strings"
-	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
-	"github.com/sudo-JP/Load-Manager/backend/internal/model"
-	"github.com/sudo-JP/Load-Manager/backend/internal/salt"
+	"sync"
+
 	"github.com/sudo-JP/Load-Manager/backend/internal/hash"
+	"github.com/sudo-JP/Load-Manager/backend/internal/model"
+	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
+	"github.com/sudo-JP/Load-Manager/backend/internal/salt"
 )
 
 type UserService struct {
@@ -91,6 +94,52 @@ func (us *UserService) GetByEmail(ctx context.Context, email string) (*model.Use
 		return nil, err
 	}
 	return result, nil
+}
+
+func bulkHash(jobs chan model.User, results chan model.User, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for u := range jobs {
+		saltPW := salt.Salt()	
+		hashed := hash.SHA256(u.Password + saltPW)
+		u.Password = saltPW + ":" + hashed
+		results <- u
+	}
+}
+
+func (us *UserService) CreateUsers(ctx context.Context, users []model.User) (bool, error) {
+	var wg sync.WaitGroup
+	threadsNum := runtime.NumCPU()
+	jobs := make(chan model.User, threadsNum * 2)
+	results := make(chan model.User, threadsNum * 2) 
+
+	// Spawn threads
+	for range threadsNum {
+		wg.Add(1)
+		go bulkHash(jobs, results, &wg)
+	}
+
+	// Create jobs
+	for _, user := range users {
+		jobs <- user 
+	}
+	close(jobs)
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect result
+	var hashedUsers []model.User
+	for u := range results {
+		hashedUsers = append(hashedUsers, u)
+	}
+	// Call repo here	
+	boolean, err := us.repo.CreateUsers(ctx, hashedUsers)	
+	if err != nil || !boolean {
+		return boolean, err
+	}
+	return true, nil
 }
 
 func (us *UserService) GetAll(ctx context.Context, email string) ([]model.User, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sudo-JP/Load-Manager/backend/internal/database"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
@@ -139,6 +140,36 @@ func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name 
 	return true, nil 
 }
 
+func (r *UserRepository) CreateUsers(ctx context.Context, users []model.User) (bool, error) {
+
+	rows := [][]any{}
+
+	tx, err := r.db.Pool.Begin(ctx)
+	if err != nil {
+    	return false, err
+	}
+	// defer rollback, but ignore the error if commit succeeds
+	defer func() {
+    	_ = tx.Rollback(ctx)
+	}()
+
+	_, err = tx.CopyFrom(
+    	ctx,
+    	pgx.Identifier{"users"},
+    	[]string{"name", "email", "password"},
+    	pgx.CopyFromRows(rows),
+	)
+	if err != nil {
+    	return false, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+    	return false, err
+	}
+
+	return true, nil
+}
 
 func NewUserRepository(db *database.Database) UserRepositoryInterface {
 	return &UserRepository{ db: db }	
