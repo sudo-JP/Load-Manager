@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 )
 

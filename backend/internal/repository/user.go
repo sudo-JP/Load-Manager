@@ -142,7 +142,14 @@ func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name 
 
 func (r *UserRepository) CreateUsers(ctx context.Context, users []model.User) (bool, error) {
 
-	rows := [][]any{}
+	rows := make([][]any, 0, len(users))
+    for _, u := range users {
+        rows = append(rows, []any{
+            u.Name,
+            u.Email,
+            u.Password,
+        })
+    }
 
 	tx, err := r.db.Pool.Begin(ctx)
 	if err != nil {
