@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/sudo-JP/Load-Manager/backend/internal/database"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
+	"github.com/jackc/pgx/v5"
 )
 
 type OrderRepository struct {
@@ -15,7 +16,7 @@ func (r *OrderRepository) Create(ctx context.Context, order *model.Order) (bool,
 	err := r.db.Pool.QueryRow(
 		ctx,
 		"INSERT INTO orders (user_id, product, quantity) VALUES ($1, $2, $3) RETURNING order_id, created_at;",
-		order.UserId, order.Product, order.Quantity,
+		order.UserId, order.ProductId, order.Quantity,
 	).Scan(&order.OrderId, &order.CreatedAt)
 
 	if err != nil {
@@ -32,7 +33,7 @@ func (r *OrderRepository) GetById(ctx context.Context, orderId int) (*model.Orde
 		ctx,
 		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE order_id = $1;",
 		orderId,
-	).Scan(&o.OrderId, &o.UserId, &o.Product, &o.Quantity, &o.CreatedAt)
+	).Scan(&o.OrderId, &o.UserId, &o.ProductId, &o.Quantity, &o.CreatedAt)
 
 	if err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ func (r *OrderRepository) GetByUser(ctx context.Context, userId int) ([]model.Or
 	var orders []model.Order
 	for rows.Next() {
 		var o model.Order
-		if err := rows.Scan(&o.OrderId, &o.UserId, &o.Product, &o.Quantity, &o.CreatedAt); err != nil {
+		if err := rows.Scan(&o.OrderId, &o.UserId, &o.ProductId, &o.Quantity, &o.CreatedAt); err != nil {
 			return nil, err
 		}
 		orders = append(orders, o)
@@ -68,7 +69,7 @@ func (r *OrderRepository) Update(ctx context.Context, order model.Order) (bool, 
 	result, err := r.db.Pool.Exec(
 		ctx,
 		"UPDATE orders SET product = $1, quantity = $2 WHERE order_id = $3",
-		order.Product, order.Quantity, order.OrderId,
+		order.ProductId, order.Quantity, order.OrderId,
 	)
 	if err != nil {
 		return false, err
@@ -112,13 +113,43 @@ func (r *OrderRepository) ListAll(ctx context.Context) ([]model.Order, error) {
 	var orders []model.Order
 	for rows.Next() {
 		var o model.Order
-		if err := rows.Scan(&o.OrderId, &o.UserId, &o.Product, &o.Quantity, &o.CreatedAt); err != nil {
+		if err := rows.Scan(&o.OrderId, &o.UserId, &o.ProductId, &o.Quantity, &o.CreatedAt); err != nil {
 			return nil, err
 		}
 		orders = append(orders, o)
 	}
 
 	return orders, nil
+}
+
+func (r *OrderRepository) CreateOrders(ctx context.Context, orders []model.Order) error {
+    // Prepare rows for bulk insert
+    rows := make([][]any, len(orders))
+    for i, o := range orders {
+        rows[i] = []any{o.UserId, o.ProductId, o.Quantity, o.CreatedAt}
+    }
+
+    // Begin transaction
+    tx, err := r.db.Pool.Begin(ctx)
+    if err != nil {
+        return err
+    }
+    // rollback if commit fails
+    defer func() { _ = tx.Rollback(ctx) }()
+
+    // Bulk insert
+    _, err = tx.CopyFrom(
+        ctx,
+        pgx.Identifier{"orders"},
+        []string{"user_id", "product_id", "quantity", "created_at"},
+        pgx.CopyFromRows(rows),
+    )
+    if err != nil {
+        return err
+    }
+
+    // Commit transaction
+    return tx.Commit(ctx)
 }
 
 func NewOrderRepository(db *database.Database) OrderRepositoryInterface {
