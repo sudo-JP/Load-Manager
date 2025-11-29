@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS products (
     product_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     version TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(name, version)
 );
 
