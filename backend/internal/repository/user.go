@@ -5,179 +5,141 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sudo-JP/Load-Manager/backend/internal/database"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 )
 
 type UserRepository struct {
-    db *database.Database
+	db *database.Database
 }
 
-
-func (r *UserRepository) Create(ctx context.Context, u *model.User) (bool, error) {
-	err := r.db.Pool.QueryRow(
-		ctx, 
-		"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING user_id;",
-		u.Name, u.Email, u.Password,
-	).Scan(&u.UserId)
-
-	if err != nil {
-		// Check for PostgreSQL-specific error
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			if pgErr.Code == "23505" {
-				return false, errors.New("DUPLICATE EMAIL")
-			}
-		}
-		return false, err
+// Bulk create users
+func (r *UserRepository) CreateUsers(ctx context.Context, users []model.User) error {
+	if len(users) == 0 {
+		return nil
 	}
-
-	return true, nil
-}
-
-
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	var name string 
-	var password string 
-	var user_id int 
-
-	err := r.db.Pool.QueryRow(
-		ctx,
-		"SELECT name, password, user_id FROM users WHERE email = $1;",
-		email,
-	).Scan(&name, &password, &user_id)
-
-	if err != nil {
-		return nil, errors.New("UNABLE TO GET USER BY EMAIL;") 
-	}
-
-
-	u := &model.User{
-    	Name:     name,
-    	Email:    email,
-    	Password: password,
-    	UserId:   user_id,
-	}
-	return u, nil
-}
-
-func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
-	result, err := r.db.Pool.Query(
-		ctx, 
-		"SELECT user_id, name, email, password from users;", 
-	)
-
-	if err != nil {
-		return nil, errors.New("UNABLE TO GET ALL USERS")
-	}
-
-	defer result.Close()
-
-	users := []model.User{}
-
-	for result.Next() {
-		var u model.User
-		err := result.Scan(&u.UserId, &u.Name, &u.Email, &u.Password)
-		if err != nil {
-			return nil, errors.New("UNABLE TO PARSE USERS")
-		}
-		users = append(users, u)
-	}
-
-	return users, nil 
-}
-
-func (r *UserRepository) DeleteUser(ctx context.Context, email string) (bool, error) {
-	result, err := r.db.Pool.Exec(
-		ctx, 
-		"DELETE FROM users WHERE email = $1;", 
-		email, 
-	)
-	
-	if err != nil {
-		return false, err
-	}
-	if result.RowsAffected() == 0 {
-		return false, errors.New("USER DOESN'T EXIST, CAN'T BE DELETED")	
-	}
-
-	return true, nil 
-}
-
-func (r *UserRepository) UpdatePassword(ctx context.Context, email string, password string) (bool, error) {
-	result, err := r.db.Pool.Exec(
-		ctx, 
-		"UPDATE users SET password = $1 WHERE email = $2;", 
-		password, email,
-	)
-
-	if err != nil {
-		return false, err
-	}
-
-	if result.RowsAffected() == 0 {
-		return false, errors.New("CAN'T FIND USER WITH EMAIL, UNABLE TO UPDATE PASSWORD")
-	}
-
-	return true, nil 
-}
-
-func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name string) (bool, error) {
-	result, err := r.db.Pool.Exec(
-		ctx, 
-		"UPDATE users SET name = $1 WHERE email = $2;", 
-		name, email,
-	)
-
-	if err != nil {
-		return false, err
-	}
-
-	if result.RowsAffected() == 0 {
-		return false, errors.New("CAN'T FIND USER WITH EMAIL, UNABLE TO UPDATE name")
-	}
-
-	return true, nil 
-}
-
-func (r *UserRepository) CreateUsers(ctx context.Context, users []model.User) (bool, error) {
 
 	rows := make([][]any, 0, len(users))
-    for _, u := range users {
-        rows = append(rows, []any{
-            u.Name,
-            u.Email,
-            u.Password,
-        })
-    }
+	for _, u := range users {
+		rows = append(rows, []any{
+			u.Name,
+			u.Email,
+			u.Password,
+		})
+	}
 
 	tx, err := r.db.Pool.Begin(ctx)
 	if err != nil {
-    	return false, err
+		return err
 	}
-	// defer rollback, but ignore the error if commit succeeds
-	defer func() {
-    	_ = tx.Rollback(ctx)
-	}()
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	_, err = tx.CopyFrom(
-    	ctx,
-    	pgx.Identifier{"users"},
-    	[]string{"name", "email", "password"},
-    	pgx.CopyFromRows(rows),
+		ctx,
+		pgx.Identifier{"users"},
+		[]string{"name", "email", "password"},
+		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-    	return false, err
+		return err
 	}
 
-	err = tx.Commit(ctx)
-	if err != nil {
-    	return false, err
-	}
-
-	return true, nil
+	return tx.Commit(ctx)
 }
 
+// Get user by email
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	var u model.User
+	err := r.db.Pool.QueryRow(
+		ctx,
+		"SELECT user_id, name, password, email FROM users WHERE email=$1",
+		email,
+	).Scan(&u.UserId, &u.Name, &u.Password, &u.Email)
+
+	if err != nil {
+		return nil, errors.New("unable to get user by email")
+	}
+	return &u, nil
+}
+
+// List all users
+func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
+	rows, err := r.db.Pool.Query(ctx, "SELECT user_id, name, email, password FROM users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := make([]model.User, 0)
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.UserId, &u.Name, &u.Email, &u.Password); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+// Update user password
+func (r *UserRepository) UpdatePassword(ctx context.Context, email string, password string) error {
+	res, err := r.db.Pool.Exec(
+		ctx,
+		"UPDATE users SET password=$1 WHERE email=$2",
+		password, email,
+	)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return errors.New("user not found, unable to update password")
+	}
+	return nil
+}
+
+// Update user name
+func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name string) error {
+	res, err := r.db.Pool.Exec(
+		ctx,
+		"UPDATE users SET name=$1 WHERE email=$2",
+		name, email,
+	)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return errors.New("user not found, unable to update name")
+	}
+	return nil
+}
+
+// Delete a user by email
+func (r *UserRepository) DeleteUser(ctx context.Context, email string) error {
+	res, err := r.db.Pool.Exec(
+		ctx,
+		"DELETE FROM users WHERE email=$1",
+		email,
+	)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return errors.New("user not found, unable to delete")
+	}
+	return nil
+}
+
+// Bulk delete users by email
+func (r *UserRepository) DeleteUsers(ctx context.Context, emails []string) error {
+	for _, e := range emails {
+		if err := r.DeleteUser(ctx, e); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Constructor
 func NewUserRepository(db *database.Database) UserRepositoryInterface {
-	return &UserRepository{ db: db }	
+	return &UserRepository{db: db}
 }
