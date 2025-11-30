@@ -7,12 +7,11 @@ import (
 )
 
 type UserRepositoryInterface interface {
-	Create(ctx context.Context, u *model.User) (bool, error)
-	CreateUsers(ctx context.Context, users []model.User) (bool, error)
+	CreateUsers(ctx context.Context, users []model.User) error
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
-	UpdatePassword(ctx context.Context, email string, password string) (bool, error)
-	UpdateUsername(ctx context.Context, email string, name string) (bool, error)
-	DeleteUser(ctx context.Context, email string) (bool, error)
+	UpdatePassword(ctx context.Context, email string, password string) error
+	UpdateUsername(ctx context.Context, email string, name string) error
+	DeleteUser(ctx context.Context, email string) error
+	DeleteUsers(ctx context.Context, emails []string) error
 	ListAll(ctx context.Context) ([]model.User, error)
 }
-

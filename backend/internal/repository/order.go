@@ -3,49 +3,66 @@ package repository
 import (
 	"context"
 	"errors"
+
 	"github.com/sudo-JP/Load-Manager/backend/internal/database"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 	"github.com/jackc/pgx/v5"
 )
 
 type OrderRepository struct {
-    db *database.Database
+	db *database.Database
 }
 
-func (r *OrderRepository) Create(ctx context.Context, order *model.Order) (bool, error) {
-	err := r.db.Pool.QueryRow(
-		ctx,
-		"INSERT INTO orders (user_id, product, quantity) VALUES ($1, $2, $3) RETURNING order_id, created_at;",
-		order.UserId, order.ProductId, order.Quantity,
-	).Scan(&order.OrderId, &order.CreatedAt)
-
-	if err != nil {
-		return false, err
+// Bulk create orders, updates each order's created_at if provided
+func (r *OrderRepository) CreateOrders(ctx context.Context, orders []model.Order) error {
+	if len(orders) == 0 {
+		return nil
 	}
 
-	return true, nil
+	tx, err := r.db.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	rows := make([][]any, len(orders))
+	for i, o := range orders {
+		rows[i] = []any{o.UserId, o.ProductId, o.Quantity, o.CreatedAt}
+	}
+
+	_, err = tx.CopyFrom(
+		ctx,
+		pgx.Identifier{"orders"},
+		[]string{"user_id", "product", "quantity", "created_at"},
+		pgx.CopyFromRows(rows),
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
+// Get a single order
 func (r *OrderRepository) GetById(ctx context.Context, orderId int) (*model.Order, error) {
 	var o model.Order
-
 	err := r.db.Pool.QueryRow(
 		ctx,
-		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE order_id = $1;",
+		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE order_id=$1",
 		orderId,
 	).Scan(&o.OrderId, &o.UserId, &o.ProductId, &o.Quantity, &o.CreatedAt)
 
 	if err != nil {
 		return nil, err
 	}
-
 	return &o, nil
 }
 
+// Get all orders for a user
 func (r *OrderRepository) GetByUser(ctx context.Context, userId int) ([]model.Order, error) {
 	rows, err := r.db.Pool.Query(
 		ctx,
-		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE user_id = $1",
+		"SELECT order_id, user_id, product, quantity, created_at FROM orders WHERE user_id=$1",
 		userId,
 	)
 	if err != nil {
@@ -61,50 +78,64 @@ func (r *OrderRepository) GetByUser(ctx context.Context, userId int) ([]model.Or
 		}
 		orders = append(orders, o)
 	}
-
 	return orders, nil
 }
 
-func (r *OrderRepository) Update(ctx context.Context, order model.Order) (bool, error) {
-	result, err := r.db.Pool.Exec(
+// Update a single order
+func (r *OrderRepository) Update(ctx context.Context, order model.Order) error {
+	res, err := r.db.Pool.Exec(
 		ctx,
-		"UPDATE orders SET product = $1, quantity = $2 WHERE order_id = $3",
+		"UPDATE orders SET product=$1, quantity=$2 WHERE order_id=$3",
 		order.ProductId, order.Quantity, order.OrderId,
 	)
 	if err != nil {
-		return false, err
+		return err
 	}
-
-	if result.RowsAffected() == 0 {
-		return false, errors.New("order not found, unable to update")
+	if res.RowsAffected() == 0 {
+		return errors.New("order not found")
 	}
-
-	return true, nil
+	return nil
 }
 
+// Bulk update orders
+func (r *OrderRepository) UpdateOrders(ctx context.Context, orders []model.Order) error {
+	for _, o := range orders {
+		if err := r.Update(ctx, o); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-func (r *OrderRepository) Delete(ctx context.Context, orderId int) (bool, error) {
-	result, err := r.db.Pool.Exec(
+// Delete a single order
+func (r *OrderRepository) Delete(ctx context.Context, orderId int) error {
+	res, err := r.db.Pool.Exec(
 		ctx,
-		"DELETE FROM orders WHERE order_id = $1",
+		"DELETE FROM orders WHERE order_id=$1",
 		orderId,
 	)
 	if err != nil {
-		return false, err
+		return err
 	}
-
-	if result.RowsAffected() == 0 {
-		return false, errors.New("order not found, unable to delete")
+	if res.RowsAffected() == 0 {
+		return errors.New("order not found")
 	}
-
-	return true, nil
+	return nil
 }
 
+// Bulk delete orders by ID
+func (r *OrderRepository) DeleteOrders(ctx context.Context, orderIDs []int) error {
+	for _, id := range orderIDs {
+		if err := r.Delete(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// List all orders
 func (r *OrderRepository) ListAll(ctx context.Context) ([]model.Order, error) {
-	rows, err := r.db.Pool.Query(
-		ctx,
-		"SELECT order_id, user_id, product, quantity, created_at FROM orders",
-	)
+	rows, err := r.db.Pool.Query(ctx, "SELECT order_id, user_id, product, quantity, created_at FROM orders")
 	if err != nil {
 		return nil, err
 	}
@@ -118,40 +149,10 @@ func (r *OrderRepository) ListAll(ctx context.Context) ([]model.Order, error) {
 		}
 		orders = append(orders, o)
 	}
-
 	return orders, nil
 }
 
-func (r *OrderRepository) CreateOrders(ctx context.Context, orders []model.Order) error {
-    // Prepare rows for bulk insert
-    rows := make([][]any, len(orders))
-    for i, o := range orders {
-        rows[i] = []any{o.UserId, o.ProductId, o.Quantity, o.CreatedAt}
-    }
-
-    // Begin transaction
-    tx, err := r.db.Pool.Begin(ctx)
-    if err != nil {
-        return err
-    }
-    // rollback if commit fails
-    defer func() { _ = tx.Rollback(ctx) }()
-
-    // Bulk insert
-    _, err = tx.CopyFrom(
-        ctx,
-        pgx.Identifier{"orders"},
-        []string{"user_id", "product_id", "quantity", "created_at"},
-        pgx.CopyFromRows(rows),
-    )
-    if err != nil {
-        return err
-    }
-
-    // Commit transaction
-    return tx.Commit(ctx)
-}
-
+// Constructor
 func NewOrderRepository(db *database.Database) OrderRepositoryInterface {
-	return &OrderRepository{ db: db }
+	return &OrderRepository{db: db}
 }
