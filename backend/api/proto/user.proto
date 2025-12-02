@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package user;
+
+message User {
+    int64 user_id = 1;   
+    string name = 2;
+    string email = 3;
+    string password = 4;
+}
+
+message CreateUsers {
+    repeated User users = 1;
+}
+
+message GetUsers {
+    repeated string email = 1;
+}
+
+message UpdateUsers {
+    repeated User users = 1;
+}
+
+message DeleteUsers {
+    repeated User users = 1;
+}
