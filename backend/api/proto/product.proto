@@ -19,7 +19,7 @@ message UpdateProducts {
 }
 
 message DeleteProducts {
-    repeated int64 product_id = 1; 
+    repeated int64 product_ids = 1; 
 }
 
 
