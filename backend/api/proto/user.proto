@@ -13,8 +13,9 @@ message CreateUsers {
     repeated User users = 1;
 }
 
-message GetUsers {
-    repeated string email = 1;
+// If email == "", get all
+message GetUser {
+    string email = 1; 
 }
 
 message UpdateUsers {
