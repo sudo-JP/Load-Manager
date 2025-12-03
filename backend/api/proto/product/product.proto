@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "github.com/sudo-JP/Load-Manager/backend/api/proto/product";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+message Product {
+    int64 product_id = 1;
+    string name = 2;
+    string version = 3;
+    google.protobuf.Timestamp created_at = 4;
+}
+
+message CreateProductsRequest {
+    repeated Product products = 1;  
+}
+
+message UpdateProductsRequest {
+    repeated Product products = 1;  
+}
+
+message DeleteProductsRequest {
+    repeated int64 product_ids = 1; 
+}
+
+// if product_id < 0, return all
+message GetProductsRequest {
+    int64 product_id = 1;
+}
+
+message GetProductsResponse {
+    repeated Product products = 1;  
+}
+
+// Service definition
+service ProductService {
+    rpc CreateProducts(CreateProductsRequest) returns (google.protobuf.Empty);
+    rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+    rpc UpdateProducts(UpdateProductsRequest) returns (google.protobuf.Empty);
+    rpc DeleteProducts(DeleteProductsRequest) returns (google.protobuf.Empty);
+}

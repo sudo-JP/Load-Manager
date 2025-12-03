@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/sudo-JP/Load-Manager/backend/api/proto/user";
+
+import "google/protobuf/empty.proto";
+
+message User {
+    int64 user_id = 1;   
+    string name = 2;
+    string email = 3;
+    string password = 4;
+}
+
+message CreateUsersRequest {
+    repeated User users = 1;
+}
+
+// if email is empty, return all
+message GetUsersRequest {
+    string email = 1;
+}
+
+// Response wrapping multiple users
+message GetUsersResponse {
+    repeated User users = 1;
+}
+
+// Bulk update users
+message UpdateUsersRequest {
+    repeated User users = 1;
+}
+
+
+// Bulk delete users
+message DeleteUsersRequest {
+    repeated User users = 1;
+}
+
+
+// Service definition
+service UserService {
+    rpc CreateUsers(CreateUsersRequest) returns (google.protobuf.Empty);
+    rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+    rpc UpdateUsers(UpdateUsersRequest) returns (google.protobuf.Empty);
+    rpc DeleteUsers(DeleteUsersRequest) returns (google.protobuf.Empty);
+}
