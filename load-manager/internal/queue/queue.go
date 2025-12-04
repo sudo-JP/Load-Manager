@@ -5,7 +5,7 @@ Queue interface
 */
 
 type Queue interface {
-    Push(job any) error
+    Push(job any) 
     Pop() 		  (any, error)
     Peek()        (any, error)
 }
