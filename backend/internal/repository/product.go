@@ -9,12 +9,12 @@ import (
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 )
 
-type ProductRepository struct {
+type Product struct {
 	db *database.Database
 }
 
 // GetById fetches a product by ID
-func (r *ProductRepository) GetById(ctx context.Context, productId int) (*model.Product, error) {
+func (r *Product) GetById(ctx context.Context, productId int) (*model.Product, error) {
 	var p model.Product
 	err := r.db.Pool.QueryRow(
 		ctx,
@@ -28,7 +28,7 @@ func (r *ProductRepository) GetById(ctx context.Context, productId int) (*model.
 }
 
 // GetByName fetches products by name
-func (r *ProductRepository) GetByName(ctx context.Context, name string) ([]model.Product, error) {
+func (r *Product) GetByName(ctx context.Context, name string) ([]model.Product, error) {
 	rows, err := r.db.Pool.Query(ctx,
 		"SELECT product_id, name, version, created_at FROM products WHERE name = $1",
 		name,
@@ -51,7 +51,7 @@ func (r *ProductRepository) GetByName(ctx context.Context, name string) ([]model
 }
 
 // ListAll returns all products
-func (r *ProductRepository) ListAll(ctx context.Context) ([]model.Product, error) {
+func (r *Product) ListAll(ctx context.Context) ([]model.Product, error) {
 	rows, err := r.db.Pool.Query(ctx, "SELECT product_id, name, version, created_at FROM products")
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (r *ProductRepository) ListAll(ctx context.Context) ([]model.Product, error
 }
 
 // CreateProducts inserts multiple products in a single transaction
-func (r *ProductRepository) CreateProducts(ctx context.Context, products []model.Product) error {
+func (r *Product) CreateProducts(ctx context.Context, products []model.Product) error {
 	if len(products) == 0 {
 		return nil
 	}
@@ -96,7 +96,7 @@ func (r *ProductRepository) CreateProducts(ctx context.Context, products []model
 }
 
 // UpdateProducts updates multiple products in a single transaction
-func (r *ProductRepository) UpdateProducts(ctx context.Context, products []model.Product) error {
+func (r *Product) UpdateProducts(ctx context.Context, products []model.Product) error {
 	if len(products) == 0 {
 		return nil
 	}
@@ -124,7 +124,7 @@ func (r *ProductRepository) UpdateProducts(ctx context.Context, products []model
 }
 
 // DeleteProducts deletes multiple products by IDs in a single transaction
-func (r *ProductRepository) DeleteProducts(ctx context.Context, ids []int) error {
+func (r *Product) DeleteProducts(ctx context.Context, ids []int) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -150,5 +150,5 @@ func (r *ProductRepository) DeleteProducts(ctx context.Context, ids []int) error
 
 // Constructor
 func NewProductRepository(db *database.Database) ProductRepositoryInterface {
-	return &ProductRepository{db: db}
+	return &Product{db: db}
 }

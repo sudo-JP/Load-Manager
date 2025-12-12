@@ -7,7 +7,7 @@ import (
 )
 
 type OrderServiceInterface interface {
-	CreateOrders(ctx context.Context, orders []model.Order, us *UserService, ps *ProductService) error
+	CreateOrders(ctx context.Context, orders []model.Order) error 
 	UpdateOrders(ctx context.Context, orders []model.Order) error
 	DeleteOrders(ctx context.Context, orderIDs []int) error
 	GetOrder(ctx context.Context, orderID int) (model.Order, error)
