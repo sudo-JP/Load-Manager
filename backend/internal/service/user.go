@@ -7,18 +7,20 @@ import (
 	"strings"
 	"sync"
 
+	pb "github.com/sudo-JP/Load-Manager/backend/api/proto/user"
 	"github.com/sudo-JP/Load-Manager/backend/internal/hash"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
 	"github.com/sudo-JP/Load-Manager/backend/internal/salt"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type UserService struct {
+type User struct {
 	repo repository.UserRepositoryInterface
 }
 
 // verifyUser checks the password before updates
-func verifyUser(ctx context.Context, us *UserService, unverified *model.User) error {
+func verifyUser(ctx context.Context, us *User, unverified *model.User) error {
 	stored, err := us.repo.GetByEmail(ctx, unverified.Email)
 	if err != nil {
 		return err
@@ -37,18 +39,44 @@ func verifyUser(ctx context.Context, us *UserService, unverified *model.User) er
 	return nil
 }
 
-// CreateUsers hashes passwords concurrently and inserts into repo
-func (us *UserService) CreateUsers(ctx context.Context, users []model.User) error {
-	if len(users) == 0 {
-		return nil
+func protoToUser(user *pb.User) model.User {
+	return model.User {
+		UserId: 	int(user.UserId), 
+		Name: 		user.Name, 
+		Email: 		user.Email,
+		Password: 	user.Password,
 	}
+}
+
+func protoToUsers(users []*pb.User) []model.User {
+	result := make([]model.User, len(users))
+	for i, user := range(users) {
+		result[i] = protoToUser(user)
+	}
+	return result
+}
+
+func (us *User) ProtoCreateUsers(ctx context.Context, req *pb.CreateUsersRequest) (*emptypb.Empty, error) {
+	users := protoToUsers(req.Users)
+	if len(users) == 0 {
+		return &emptypb.Empty{}, nil
+	}
+	
+	if err := us.CreateUsers(ctx, users); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// CreateUsers hashes passwords concurrently and inserts into repo
+func (us *User) CreateUsers(ctx context.Context, users []model.User) error {
 
 	threadsNum := runtime.NumCPU()
 	jobs := make(chan model.User, threadsNum*2)
 	results := make(chan model.User, len(users))
 	var wg sync.WaitGroup
 
-	for i := 0; i < threadsNum; i++ {
+	for range(threadsNum) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -76,16 +104,76 @@ func (us *UserService) CreateUsers(ctx context.Context, users []model.User) erro
 		hashedUsers = append(hashedUsers, u)
 	}
 
-	return us.repo.CreateUsers(ctx, hashedUsers)
+	if err := us.repo.CreateUsers(ctx, hashedUsers); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (us *User) ProtoGetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
+	var users []model.User
+	var u model.User
+	var err error
+	
+	if req.Email == "" {
+		users, err = us.ListUsers(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		u, err = us.GetUser(ctx, req.Email)
+		users = []model.User{u}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	pbUsers := make([]*pb.User, len(users)) 
+	for i, user := range users {
+		pbUsers[i] = &pb.User{
+			UserId: 	int64(user.UserId),
+			Name: 		user.Name,
+			Email: 		user.Email, 
+		}
+	}
+
+	return &pb.GetUsersResponse{
+		Users: pbUsers,
+	}, nil
+}
+
+// GetUser fetches a single user
+func (us *User) GetUser(ctx context.Context, email string) (model.User, error) {
+	u, err := us.repo.GetByEmail(ctx, email)
+	if err != nil {
+		return model.User{}, err
+	}
+	return *u, nil
+}
+
+// ListUsers fetches all users
+func (us *User) ListUsers(ctx context.Context) ([]model.User, error) {
+	return us.repo.ListAll(ctx)
+}
+
+func (us *User) ProtoUpdateUsers(ctx context.Context, req *pb.UpdateUsersRequest) (*emptypb.Empty, error) {
+	users := protoToUsers(req.Users)
+	err := us.UpdateUsers(ctx, users)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, err
 }
 
 // UpdateUsers updates usernames and/or passwords in bulk
-func (us *UserService) UpdateUsers(ctx context.Context, updates []model.User) error {
+func (us *User) UpdateUsers(ctx context.Context, updates []model.User) error {
 	for _, u := range updates {
 		if u.Password != "" {
 			if err := verifyUser(ctx, us, &u); err != nil {
 				return err
 			}
+			// New password
 			saltPW := salt.Salt()
 			hashed := hash.SHA256(u.Password + saltPW)
 			u.Password = saltPW + ":" + hashed
@@ -105,26 +193,32 @@ func (us *UserService) UpdateUsers(ctx context.Context, updates []model.User) er
 	return nil
 }
 
+
+func protoToEmail(users []*pb.User) []string {
+	result := make([]string, len(users))
+
+	for i, user := range(users) {
+		result[i] = user.Email
+	}
+	return result
+}
+
+func (us *User) ProtoDeleteUsers(ctx context.Context, req *pb.DeleteUsersRequest) (*emptypb.Empty, error) {
+	emails := protoToEmail(req.Users)
+	err := us.DeleteUsers(ctx, emails)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
 // DeleteUsers deletes multiple users by email
-func (us *UserService) DeleteUsers(ctx context.Context, emails []string) error {
+func (us *User) DeleteUsers(ctx context.Context, emails []string) error {
 	return us.repo.DeleteUsers(ctx, emails)
 }
 
-// GetUser fetches a single user
-func (us *UserService) GetUser(ctx context.Context, email string) (model.User, error) {
-	u, err := us.repo.GetByEmail(ctx, email)
-	if err != nil {
-		return model.User{}, err
-	}
-	return *u, nil
-}
-
-// ListUsers fetches all users
-func (us *UserService) ListUsers(ctx context.Context) ([]model.User, error) {
-	return us.repo.ListAll(ctx)
-}
 
 // Constructor
 func NewUserService(repo repository.UserRepositoryInterface) UserServiceInterface {
-	return &UserService{repo: repo}
+	return &User{repo: repo}
 }

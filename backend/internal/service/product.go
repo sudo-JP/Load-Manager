@@ -9,7 +9,7 @@ import (
 	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
 )
 
-type ProductService struct {
+type Product struct {
 	repo repository.ProductRepositoryInterface
 }
 
@@ -24,7 +24,7 @@ func validateProduct(jobs <-chan model.Product, results chan<- model.Product, wg
 }
 
 // CreateProducts validates products concurrently and calls repository
-func (ps *ProductService) CreateProducts(ctx context.Context, products []model.Product) error {
+func (ps *Product) CreateProducts(ctx context.Context, products []model.Product) error {
 	if len(products) == 0 {
 		return nil
 	}
@@ -58,17 +58,17 @@ func (ps *ProductService) CreateProducts(ctx context.Context, products []model.P
 }
 
 // UpdateProducts updates multiple products
-func (ps *ProductService) UpdateProducts(ctx context.Context, products []model.Product) error {
+func (ps *Product) UpdateProducts(ctx context.Context, products []model.Product) error {
 	return ps.repo.UpdateProducts(ctx, products)
 }
 
 // DeleteProducts deletes multiple products by ID
-func (ps *ProductService) DeleteProducts(ctx context.Context, ids []int) error {
+func (ps *Product) DeleteProducts(ctx context.Context, ids []int) error {
 	return ps.repo.DeleteProducts(ctx, ids)
 }
 
 // GetProduct fetches a single product by ID
-func (ps *ProductService) GetProduct(ctx context.Context, id int) (model.Product, error) {
+func (ps *Product) GetProduct(ctx context.Context, id int) (model.Product, error) {
 	p, err := ps.repo.GetById(ctx, id)
 	if err != nil {
 		return model.Product{}, err
@@ -77,11 +77,11 @@ func (ps *ProductService) GetProduct(ctx context.Context, id int) (model.Product
 }
 
 // ListProducts returns all products
-func (ps *ProductService) ListProducts(ctx context.Context) ([]model.Product, error) {
+func (ps *Product) ListProducts(ctx context.Context) ([]model.Product, error) {
 	return ps.repo.ListAll(ctx)
 }
 
 // Constructor
 func NewProductService(repo repository.ProductRepositoryInterface) ProductServiceInterface {
-	return &ProductService{repo: repo}
+	return &Product{repo: repo}
 }

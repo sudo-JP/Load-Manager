@@ -9,12 +9,12 @@ import (
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 )
 
-type UserRepository struct {
+type User struct {
 	db *database.Database
 }
 
 // Bulk create users
-func (r *UserRepository) CreateUsers(ctx context.Context, users []model.User) error {
+func (r *User) CreateUsers(ctx context.Context, users []model.User) error {
 	if len(users) == 0 {
 		return nil
 	}
@@ -48,7 +48,7 @@ func (r *UserRepository) CreateUsers(ctx context.Context, users []model.User) er
 }
 
 // Get user by email
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *User) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var u model.User
 	err := r.db.Pool.QueryRow(
 		ctx,
@@ -63,7 +63,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 }
 
 // List all users
-func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
+func (r *User) ListAll(ctx context.Context) ([]model.User, error) {
 	rows, err := r.db.Pool.Query(ctx, "SELECT user_id, name, email, password FROM users")
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
 }
 
 // Update user password
-func (r *UserRepository) UpdatePassword(ctx context.Context, email string, password string) error {
+func (r *User) UpdatePassword(ctx context.Context, email string, password string) error {
 	res, err := r.db.Pool.Exec(
 		ctx,
 		"UPDATE users SET password=$1 WHERE email=$2",
@@ -98,7 +98,7 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, email string, passw
 }
 
 // Update user name
-func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name string) error {
+func (r *User) UpdateUsername(ctx context.Context, email string, name string) error {
 	res, err := r.db.Pool.Exec(
 		ctx,
 		"UPDATE users SET name=$1 WHERE email=$2",
@@ -114,7 +114,7 @@ func (r *UserRepository) UpdateUsername(ctx context.Context, email string, name 
 }
 
 // Delete a user by email
-func (r *UserRepository) DeleteUser(ctx context.Context, email string) error {
+func (r *User) DeleteUser(ctx context.Context, email string) error {
 	res, err := r.db.Pool.Exec(
 		ctx,
 		"DELETE FROM users WHERE email=$1",
@@ -130,7 +130,7 @@ func (r *UserRepository) DeleteUser(ctx context.Context, email string) error {
 }
 
 // Bulk delete users by email
-func (r *UserRepository) DeleteUsers(ctx context.Context, emails []string) error {
+func (r *User) DeleteUsers(ctx context.Context, emails []string) error {
 	for _, e := range emails {
 		if err := r.DeleteUser(ctx, e); err != nil {
 			return err
@@ -141,5 +141,5 @@ func (r *UserRepository) DeleteUsers(ctx context.Context, emails []string) error
 
 // Constructor
 func NewUserRepository(db *database.Database) UserRepositoryInterface {
-	return &UserRepository{db: db}
+	return &User{db: db}
 }

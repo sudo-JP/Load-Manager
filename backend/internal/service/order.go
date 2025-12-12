@@ -9,7 +9,7 @@ import (
 	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
 )
 
-type OrderService struct {
+type Order struct {
 	repo repository.OrderRepositoryInterface
 }
 
@@ -28,8 +28,10 @@ func validateOrder(jobs <-chan model.Order, results chan<- model.Order, wg *sync
 }
 
 // CreateOrders validates orders concurrently and calls repository
-func (os *OrderService) CreateOrders(ctx context.Context, orders []model.Order, us *UserService, ps *ProductService) error {
-	users, err := us.repo.ListAll(ctx)
+func (svc *Order) CreateOrders(ctx context.Context, orders []model.Order, 
+	us UserServiceInterface, ps ProductServiceInterface) error {
+
+	users, err := us.ListUsers(ctx)
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,7 @@ func (os *OrderService) CreateOrders(ctx context.Context, orders []model.Order, 
 		userMap[u.UserId] = u
 	}
 
-	products, err := ps.repo.ListAll(ctx)
+	products, err := ps.ListProducts(ctx)
 	if err != nil {
 		return err
 	}
@@ -72,21 +74,21 @@ func (os *OrderService) CreateOrders(ctx context.Context, orders []model.Order, 
 		validated = append(validated, o)
 	}
 
-	return os.repo.CreateOrders(ctx, validated)
+	return svc.repo.CreateOrders(ctx, validated)
 }
 
 // UpdateOrders updates multiple orders in bulk
-func (os *OrderService) UpdateOrders(ctx context.Context, orders []model.Order) error {
+func (os *Order) UpdateOrders(ctx context.Context, orders []model.Order) error {
 	return os.repo.UpdateOrders(ctx, orders)
 }
 
 // DeleteOrders deletes multiple orders by IDs
-func (os *OrderService) DeleteOrders(ctx context.Context, orderIDs []int) error {
+func (os *Order) DeleteOrders(ctx context.Context, orderIDs []int) error {
 	return os.repo.DeleteOrders(ctx, orderIDs)
 }
 
 // GetOrder fetches a single order
-func (os *OrderService) GetOrder(ctx context.Context, orderID int) (model.Order, error) {
+func (os *Order) GetOrder(ctx context.Context, orderID int) (model.Order, error) {
 	o, err := os.repo.GetById(ctx, orderID)
 	if err != nil {
 		return model.Order{}, err
@@ -95,13 +97,13 @@ func (os *OrderService) GetOrder(ctx context.Context, orderID int) (model.Order,
 }
 
 // GetOrdersByUser fetches all orders for a given user
-func (os *OrderService) GetOrdersByUser(ctx context.Context, userID int) ([]model.Order, error) {
+func (os *Order) GetOrdersByUser(ctx context.Context, userID int) ([]model.Order, error) {
 	return os.repo.GetByUser(ctx, userID)
 }
 
 // ListOrders paginates all orders
-func (os *OrderService) ListOrders(ctx context.Context, page int, limit int) ([]model.Order, error) {
-	allOrders, err := os.repo.ListAll(ctx)
+func (svc *Order) ListOrders(ctx context.Context, page int, limit int) ([]model.Order, error) {
+	allOrders, err := svc.repo.ListAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -121,5 +123,5 @@ func (os *OrderService) ListOrders(ctx context.Context, page int, limit int) ([]
 
 // Constructor
 func NewOrderService(repo repository.OrderRepositoryInterface) OrderServiceInterface {
-	return &OrderService{repo: repo}
+	return &Order{repo: repo}
 }
