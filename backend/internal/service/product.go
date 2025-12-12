@@ -154,7 +154,7 @@ func (ps *Product) UpdateProducts(ctx context.Context, products []model.Product)
 	return ps.repo.UpdateProducts(ctx, products)
 }
 
-func protoToIds(products []int64) []int {
+func protoToProductIds(products []int64) []int {
 	result := make([]int, len(products))	
 	for i, id := range(products) {
 		result[i] = int(id)
@@ -164,7 +164,7 @@ func protoToIds(products []int64) []int {
 
 func (ps *Product) ProtoDeleteProducts(ctx context.Context, 
 	req *pb.DeleteProductsRequest) (*emptypb.Empty, error) {
-	ids := protoToIds(req.ProductIds)
+	ids := protoToProductIds(req.ProductIds)
 	if len(ids) == 0 {
 		return &emptypb.Empty{}, nil
 	}
