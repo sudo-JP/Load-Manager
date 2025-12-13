@@ -7,18 +7,17 @@ import (
 )
 
 type OrderRepositoryInterface interface {
-	// Create 
+	// Create
 	CreateOrders(ctx context.Context, orders []model.Order) error
 
-	// Reads 
+	// Reads
 	GetById(ctx context.Context, orderId int, userId int) (*model.Order, error)
-	GetByUser(ctx context.Context, userId int, page int) ([]model.Order, error)
-	GetByProduct(ctx context.Context, productId int, userId int, page int) ([]model.Order, error)
-	ListAll(ctx context.Context, userId int) ([]model.Order, error)
+	GetByUser(ctx context.Context, userId int, limit int, offset int) ([]model.Order, error)
+	GetByProduct(ctx context.Context, userId int, productId int, limit int, offset int) ([]model.Order, error)
 
-	// Update 
+	// Update
 	UpdateOrders(ctx context.Context, orders []model.Order) error
 
-	// Deletes 
+	// Deletes
 	DeleteOrders(ctx context.Context, orderIDs []int) error
 }
