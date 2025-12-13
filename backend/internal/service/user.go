@@ -8,11 +8,12 @@ import (
 	"sync"
 
 	pb "github.com/sudo-JP/Load-Manager/backend/api/proto/user"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/sudo-JP/Load-Manager/backend/internal/hash"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
 	"github.com/sudo-JP/Load-Manager/backend/internal/salt"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type User struct {
