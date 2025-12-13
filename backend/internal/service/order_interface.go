@@ -8,9 +8,14 @@ import (
 
 type OrderServiceInterface interface {
 	CreateOrders(ctx context.Context, orders []model.Order) error 
+
 	UpdateOrders(ctx context.Context, orders []model.Order) error
+
 	DeleteOrders(ctx context.Context, orderIDs []int) error
-	GetOrder(ctx context.Context, orderID int) (model.Order, error)
-	GetOrdersByUser(ctx context.Context, userID int) ([]model.Order, error)
-	ListOrders(ctx context.Context, page int, limit int) ([]model.Order, error)
+
+	
+	GetOrder(ctx context.Context, orderId int, userId int) (model.Order, error)
+	GetOrdersByUser(ctx context.Context, userId int, page int) ([]model.Order, error)
+	GetOrdersByProduct(ctx context.Context, userId int, productId int, page int) ([]model.Order, error)
+	ListOrders(ctx context.Context, userId int) ([]model.Order, error)
 }
