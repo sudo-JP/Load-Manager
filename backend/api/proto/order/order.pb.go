@@ -234,7 +234,10 @@ func (x *DeleteOrdersRequest) GetOrderIds() []int64 {
 // if order_id < 0, return all
 type GetOrdersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       int64                  `protobuf:"varint,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	OrderId       *int64                 `protobuf:"varint,3,opt,name=order_id,json=orderId,proto3,oneof" json:"order_id,omitempty"`
+	ProductId     *int64                 `protobuf:"varint,4,opt,name=product_id,json=productId,proto3,oneof" json:"product_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -269,9 +272,30 @@ func (*GetOrdersRequest) Descriptor() ([]byte, []int) {
 	return file_order_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetOrdersRequest) GetOrderId() int64 {
+func (x *GetOrdersRequest) GetUserId() int64 {
 	if x != nil {
-		return x.OrderId
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GetOrdersRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetOrdersRequest) GetOrderId() int64 {
+	if x != nil && x.OrderId != nil {
+		return *x.OrderId
+	}
+	return 0
+}
+
+func (x *GetOrdersRequest) GetProductId() int64 {
+	if x != nil && x.ProductId != nil {
+		return *x.ProductId
 	}
 	return 0
 }
@@ -338,9 +362,15 @@ const file_order_proto_rawDesc = "" +
 	"\x13UpdateOrdersRequest\x12$\n" +
 	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders\"2\n" +
 	"\x13DeleteOrdersRequest\x12\x1b\n" +
-	"\torder_ids\x18\x01 \x03(\x03R\borderIds\"-\n" +
-	"\x10GetOrdersRequest\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\x03R\aorderId\"9\n" +
+	"\torder_ids\x18\x01 \x03(\x03R\borderIds\"\x9f\x01\n" +
+	"\x10GetOrdersRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1e\n" +
+	"\border_id\x18\x03 \x01(\x03H\x00R\aorderId\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"product_id\x18\x04 \x01(\x03H\x01R\tproductId\x88\x01\x01B\v\n" +
+	"\t_order_idB\r\n" +
+	"\v_product_id\"9\n" +
 	"\x11GetOrdersResponse\x12$\n" +
 	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders2\x9a\x02\n" +
 	"\fOrderService\x12B\n" +
@@ -397,6 +427,7 @@ func file_order_proto_init() {
 	if File_order_proto != nil {
 		return
 	}
+	file_order_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

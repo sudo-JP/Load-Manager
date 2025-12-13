@@ -116,18 +116,26 @@ func (svc *Order) CreateOrders(ctx context.Context, orders []model.Order) error 
 func (svc *Order) ProtoGetOrders(ctx context.Context, 
 	req *pb.GetOrdersRequest) (*pb.GetOrdersResponse, error) {
 
-	/*var order model.Order
+	userId := int(req.UserId)
+	page := int(req.Page)
+
 	var orders []model.Order
+	var order *model.Order
 	var err error 
 
-	if req.OrderId < 0 {
-		orders, err = svc.GetOrdersByUser(ctx, int(req.OrderId))
+	// get all 
+	if page <= 0 || (req.ProductId == nil && req.OrderId == nil) {
+		orders, err = svc.ListOrders(ctx, userId)
+	} else if req.ProductId != nil {
+		orders, err = svc.repo.GetByProduct(ctx, int(*req.ProductId), userId, page)
 	} else {
-		order 
-	}*/
+		order, err = svc.repo.GetById(ctx, int(*req.OrderId), userId)
+		if err != nil {
+			return nil, err
+		}
+		orders = []model.Order{*order}
+	} 
 
-	// Default for now
-	orders, err := svc.GetOrdersByUser(ctx, int(req.OrderId))
 	if err != nil {
 		return nil, err
 	}
@@ -148,39 +156,40 @@ func (svc *Order) ProtoGetOrders(ctx context.Context,
 	}, nil 
 }
 
-// GetOrder fetches a single order
-func (svc *Order) GetOrder(ctx context.Context, orderID int) (model.Order, error) {
-	o, err := svc.repo.GetById(ctx, orderID)
-	if err != nil {
+func (svc *Order) GetOrder(ctx context.Context, 
+	orderId int, userId int) (model.Order, error) {
+	order, err := svc.repo.GetById(ctx, orderId, userId)
+	if err != nil || order == nil {
 		return model.Order{}, err
 	}
-	return *o, nil
+	return *order, nil
 }
 
-// GetOrdersByUser fetches all orders for a given user
-func (svc *Order) GetOrdersByUser(ctx context.Context, userID int) ([]model.Order, error) {
-	return svc.repo.GetByUser(ctx, userID)
-}
-
-// ListOrders paginates all orders
-// TODO: Fix this
-func (svc *Order) ListOrders(ctx context.Context, page int, limit int) ([]model.Order, error) {
-	allOrders, err := svc.repo.ListAll(ctx)
+func (svc *Order) GetOrdersByUser(ctx context.Context, 
+	userId int, page int) ([]model.Order, error) {
+	orders, err := svc.repo.GetByUser(ctx, userId, page)
 	if err != nil {
 		return nil, err
 	}
+	return orders, nil
+}
 
-	start := (page - 1) * limit
-	if start >= len(allOrders) {
-		return []model.Order{}, nil
+func (svc *Order) GetOrdersByProduct(ctx context.Context, userId int,  
+	productId int, page int) ([]model.Order, error) {
+	orders, err := svc.repo.GetByProduct(ctx, productId, userId, page) 
+	if err != nil {
+		return nil, err
 	}
+	return orders, nil
+}
 
-	end := start + limit
-	if end > len(allOrders) {
-		end = len(allOrders)
+func (svc *Order) ListOrders(ctx context.Context, 
+	userId int) ([]model.Order, error) {
+	orders, err := svc.repo.ListAll(ctx, userId)
+	if err != nil {
+		return nil, err
 	}
-
-	return allOrders[start:end], nil
+	return orders, nil
 }
 
 func (svc *Order) ProtoUpdateOrders(ctx context.Context, 
