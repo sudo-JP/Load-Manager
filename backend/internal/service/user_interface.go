@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
+
 	pb "github.com/sudo-JP/Load-Manager/backend/api/proto/user"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

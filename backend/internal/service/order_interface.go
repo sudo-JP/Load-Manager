@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
-
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
+
+	pb "github.com/sudo-JP/Load-Manager/backend/api/proto/order"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type OrderServiceInterface interface {
@@ -16,4 +18,8 @@ type OrderServiceInterface interface {
 	DeleteOrders(ctx context.Context, orderIDs []int) error
 	
 	// Protos
+	ProtoCreateOrders(ctx context.Context, req *pb.CreateOrdersRequest) (*emptypb.Empty, error) 
+ 	ProtoGetOrders(ctx context.Context, req *pb.GetOrdersRequest) (*pb.GetOrdersResponse, error) 
+ 	ProtoUpdateOrders(ctx context.Context, req *pb.UpdateOrdersRequest) (*emptypb.Empty, error) 
+ 	ProtoDeleteOrders(ctx context.Context, req *pb.DeleteOrdersRequest) (*emptypb.Empty, error) 
 }
