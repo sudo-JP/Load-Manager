@@ -42,7 +42,7 @@ func protoToProducts(products []*pb.Product) []model.Product {
 	return result
 }
 
-func (ps *Product) ProtoCreateProduct(ctx context.Context, req *pb.CreateProductsRequest) (*emptypb.Empty, error) {
+func (ps *Product) ProtoCreateProducts(ctx context.Context, req *pb.CreateProductsRequest) (*emptypb.Empty, error) {
 	products := protoToProducts(req.Products)	
 	if len(products) == 0 {
 		return &emptypb.Empty{}, nil 
@@ -134,7 +134,7 @@ func (ps *Product) ListProducts(ctx context.Context) ([]model.Product, error) {
 	return ps.repo.ListAll(ctx)
 }
 
-func (ps *Product) ProtoUpdateProduct(ctx context.Context, 
+func (ps *Product) ProtoUpdateProducts(ctx context.Context, 
 	req *pb.UpdateProductsRequest) (*emptypb.Empty, error) {
 	products := protoToProducts(req.Products)
 	if len(products) == 0 {
