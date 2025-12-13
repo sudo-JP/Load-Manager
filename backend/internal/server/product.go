@@ -27,3 +27,7 @@ func (s *ProductServer) UpdateOrders(ctx context.Context,
 	req *pb.UpdateProductsRequest) (*emptypb.Empty, error) {
 	return s.svc.ProtoUpdateProducts(ctx, req)
 }
+
+func NewProductServer(svc service.ProductServiceInterface) *ProductServer {
+	return &ProductServer{svc: svc}
+}

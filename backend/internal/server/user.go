@@ -27,3 +27,7 @@ func (s *UserServer) UpdateUsers(ctx context.Context,
 	req *pb.UpdateUsersRequest) (*emptypb.Empty, error) {
 	return s.svc.ProtoUpdateUsers(ctx, req)
 }
+
+func NewUserServer(svc service.UserServiceInterface) *UserServer {
+	return &UserServer{svc: svc}
+}
