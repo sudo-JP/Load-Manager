@@ -39,9 +39,9 @@ func parseCLI(args []string) (string, string, error) {
 			port = args[i]
 			isPort = false
 		} else if args[i] == "--port" {
-			isHost = true 
-		} else if args[i] == "--host" {
 			isPort = true
+		} else if args[i] == "--host" {
+			isHost = true 
 		} 
 	}
 	return host, port, nil
@@ -79,7 +79,7 @@ func main() {
 	pbOrder.RegisterOrderServiceServer(grpcServer, server.NewOrderServer(orderService))
 	pbProduct.RegisterProductServiceServer(grpcServer, server.NewProductServer(productService))
 
-	tcpListener, err := net.Listen("tcp", ":"+port)
+	tcpListener, err := net.Listen("tcp", host+":"+port)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 		os.Exit(3)
@@ -96,6 +96,7 @@ func main() {
 	// shutdown
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
 
 	log.Println("Shutting down...")
 	grpcServer.GracefulStop()

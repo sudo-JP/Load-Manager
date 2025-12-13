@@ -28,6 +28,11 @@ func (s *UserServer) UpdateUsers(ctx context.Context,
 	return s.svc.ProtoUpdateUsers(ctx, req)
 }
 
+func (s *UserServer) DeleteUsers(ctx context.Context,
+	req *pb.DeleteUsersRequest) (*emptypb.Empty, error) {
+	return s.svc.ProtoDeleteUsers(ctx, req)
+}
+
 func NewUserServer(svc service.UserServiceInterface) *UserServer {
 	return &UserServer{svc: svc}
 }

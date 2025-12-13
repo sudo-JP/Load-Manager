@@ -28,6 +28,11 @@ func (s *OrderServer) UpdateOrders(ctx context.Context,
 	return s.svc.ProtoUpdateOrders(ctx, req)
 }
 
+func (s *OrderServer) DeleteOrders(ctx context.Context,
+	req *pb.DeleteOrdersRequest) (*emptypb.Empty, error) {
+	return s.svc.ProtoDeleteOrders(ctx, req)
+}
+
 func NewOrderServer(svc service.OrderServiceInterface) *OrderServer {
 	return &OrderServer{svc: svc}
 }
