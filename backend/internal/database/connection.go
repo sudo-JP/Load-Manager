@@ -22,6 +22,10 @@ func DatabaseConnection() (*Database, error) {
 	}
 
 	db := &Database { Pool: conn }
+
+	// Exit later
+	defer conn.Close()
+
 	return db, nil 
 }
 
