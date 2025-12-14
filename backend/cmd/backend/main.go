@@ -1,12 +1,12 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
-	"syscall"
 	"os/signal"
+	"syscall"
 
 	"github.com/sudo-JP/Load-Manager/backend/internal/database"
 	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
@@ -30,7 +30,7 @@ func parseCLI(args []string) (string, string, error) {
 
 	for i := 1; i < len(args); i++ {
 		if isHost && host != "" || isPort && port != "" {
-			return "", "", errors.New("Invalid flag")
+			return "", "", fmt.Errorf("invalid flag")
 		}
 		if isHost {
 			host = args[i]
@@ -63,6 +63,7 @@ func main() {
 		log.Fatalf("Failed to connect to Database: %v", err)
 		os.Exit(2)
 	}
+	defer db.Close()
 
 	// Repository
 	orderRepo := repository.NewOrderRepository(db)

@@ -1,11 +1,13 @@
 package queue
 
+
 /*
 Queue interface 
 */
 
 type Queue interface {
-    Push(job any) 
-    Pop() 		  (any, error)
-    Peek()        (any, error)
+    Pushs([]*Job)   []error
+    Pops() 		    ([]*Job, []error)
+    Len()           int
+    IsEmpty()       bool 
 }

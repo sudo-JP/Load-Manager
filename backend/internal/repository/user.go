@@ -113,30 +113,16 @@ func (r *User) UpdateUsername(ctx context.Context, email string, name string) er
 	return nil
 }
 
-// Delete a user by email
-func (r *User) DeleteUser(ctx context.Context, email string) error {
-	res, err := r.db.Pool.Exec(
-		ctx,
-		"DELETE FROM users WHERE email=$1",
-		email,
-	)
-	if err != nil {
-		return err
-	}
-	if res.RowsAffected() == 0 {
-		return errors.New("user not found, unable to delete")
-	}
-	return nil
-}
 
 // Bulk delete users by email
 func (r *User) DeleteUsers(ctx context.Context, emails []string) error {
-	for _, e := range emails {
-		if err := r.DeleteUser(ctx, e); err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err := r.db.Pool.Exec(
+		ctx,
+		"DELETE FROM users WHERE email = ANY($1);",
+		emails,
+	)
+
+	return err
 }
 
 // Constructor
