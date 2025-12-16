@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "github.com/sudo-JP/Load-Manager/load-manager/api/proto/order";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+message Order {
+    int64 order_id = 1;
+    int64 user_id = 2;
+    int64 product_id = 3;
+    int32 quantity = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message CreateOrdersRequest {
+    repeated Order orders = 1;
+}
+
+message UpdateOrdersRequest {
+    repeated Order orders = 1;
+}
+
+message DeleteOrdersRequest {
+    repeated int64 order_ids = 1;
+}
+
+message GetOrdersRequest {
+    int64 user_id = 1;
+    int32 page = 2;  // if page is < 0, return all 
+
+    optional int64 order_id = 3; 
+    optional int64 product_id = 4; 
+}
+
+message GetOrdersResponse {
+    repeated Order orders = 1;
+}
+
+service OrderService {
+    rpc CreateOrders(CreateOrdersRequest) returns (google.protobuf.Empty);
+    rpc GetOrders(GetOrdersRequest) returns (GetOrdersResponse);
+    rpc UpdateOrders(UpdateOrdersRequest) returns (google.protobuf.Empty);
+    rpc DeleteOrders(DeleteOrdersRequest) returns (google.protobuf.Empty);
+}
