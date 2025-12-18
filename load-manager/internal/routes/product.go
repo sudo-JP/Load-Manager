@@ -150,7 +150,3 @@ func DeleteProduct(batch *batcher.Batcher) gin.HandlerFunc {
 	}
 }
 
-type GetProductDTO struct {
-	Name 	string `json:"name" binding:"required"`
-	Version string `json:"version" binding:"required"`
-}
