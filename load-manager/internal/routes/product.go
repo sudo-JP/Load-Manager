@@ -3,36 +3,53 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sudo-JP/Load-Manager/load-manager/internal/batcher"
+	"github.com/sudo-JP/Load-Manager/load-manager/internal/queue"
 )
 
-func GetProductsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(r.Body)
+type CreateProductDTO struct {
+	Name 	string `json:"name" binding:"required"`
+	Version string `json:"version" binding:"required"`
 }
 
-func DeleteProductsHandler(w http.ResponseWriter, r *http.Request) {
+func CreateProduct(batch *batcher.Batcher) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var product CreateProductDTO
+		
+		if err := c.ShouldBindJSON(&product); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return 
+		}
 
-}
+		payload, err := json.Marshal(product)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return 
+		}
 
-func UpdateProductsHandler(w http.ResponseWriter, r *http.Request) {
+		job := &queue.Job{
+			ID: 		queue.GetID(), 
+			Resource: 	queue.User,
+			CRUD: 		queue.Create, 
+			Payload: 	payload, 
+			Priority: 	0, 
+			CreatedAt: 	time.Now(),
+		}
 
-}
+		batch.AddProduct(job)
 
-func CreateProductsHandler(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func ProductRoutes(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		GetProductsHandler(w, r)
-	case http.MethodPost:
-		CreateProductsHandler(w, r)
-	case http.MethodPut:
-		UpdateProductsHandler(w, r)
-	case http.MethodDelete:
-		DeleteProductsHandler(w, r)
-	default:
-		http.Error(w, "bad method", http.StatusMethodNotAllowed)
+		c.Status(http.StatusOK)
 	}
+}
+
+type GetProductDTO struct {
+	Name 	string `json:"name" binding:"required"`
+	Version string `json:"version" binding:"required"`
 }
