@@ -2,6 +2,7 @@ package queue
 
 import "time"
 
+var idCounter int = -1
 
 type JobType int
 type Operation int 
@@ -29,5 +30,8 @@ type Job struct {
 	CreatedAt 	time.Time
 }
 
-
+func GetID() int {
+	idCounter++
+	return idCounter
+}
 
