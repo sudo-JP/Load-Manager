@@ -33,3 +33,11 @@ func (b *Batcher) AddUser(data any) {
 	
 }
 
+
+func (b *Batcher) AddProduct(data any) {
+	
+}
+
+func (b *Batcher) AddOrder(data any) {
+	
+}

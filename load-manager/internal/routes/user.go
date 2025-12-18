@@ -82,9 +82,9 @@ func GetUser(batch *batcher.Batcher) gin.HandlerFunc {
 
 
 type UpdateUserDTO struct {
-    Name     string `json:"name" binding:"required"`
     Email    string `json:"email" binding:"required,email"`
-    Password string `json:"password" binding:"required,min=8"`
+    Name     string `json:"name" binding:"required"`
+    Password string `json:"password" binding:"required"`
 }
 
 
@@ -100,7 +100,14 @@ func UpdateUser(batch *batcher.Batcher) gin.HandlerFunc {
 			return
 		}
 
-		payload, _ := json.Marshal(user)
+		payload, err := json.Marshal(user)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(), 
+			})
+			return 
+		}
 
 		job := &queue.Job{
 			ID: 		queue.GetID(),
