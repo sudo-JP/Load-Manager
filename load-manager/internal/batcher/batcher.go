@@ -8,106 +8,119 @@ import (
 )
 
 type Batcher struct {
-	Queue    queue.Queue
+	queue    	queue.Queue
+	users    	[]*queue.Job
+	products 	[]*queue.Job
+	orders   	[]*queue.Job
 
-	Users    []*queue.Job
-	Products []*queue.Job
-	Orders   []*queue.Job
+	batchSize 	int
+	timeout   	time.Duration
 
-	BatchSize int
-	Timeout   time.Duration
-
-	Mutex  sync.Mutex
-	Timer  *time.Timer
-	StopCh chan struct{}
+	mutex  		sync.Mutex
+	timer  		*time.Timer
+	stopCh 		chan struct{}
 }
 
-
 func (b *Batcher) AddUser(job *queue.Job) {
-	b.Mutex.Lock()
-	defer b.Mutex.Unlock()
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
 
-	b.Users = append(b.Users, job)
+	b.users = append(b.users, job)
+	if len(b.users) >= b.batchSize {
+		b.flushUsersLocked()
+	}
 }
 
 func (b *Batcher) AddProduct(job *queue.Job) {
-	b.Mutex.Lock()
-	defer b.Mutex.Unlock()
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
 
-	b.Products = append(b.Products, job)
+	b.products = append(b.products, job)
+	if len(b.products) >= b.batchSize {
+		b.flushUsersLocked()
+	}
 }
 
 func (b *Batcher) AddOrder(job *queue.Job) {
-	b.Mutex.Lock()
-	defer b.Mutex.Unlock()
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
 
-	b.Orders = append(b.Orders, job)
+	b.orders = append(b.orders, job)
+	if len(b.orders) >= b.batchSize {
+		b.flushUsersLocked()
+	}
 }
 
 func (b *Batcher) flush() {
-	b.Mutex.Lock()
+	b.mutex.Lock()
 
-	users := b.Users 
-	products := b.Products 
-	orders := b.Orders
+	users := b.users
+	products := b.products
+	orders := b.orders
 
-	b.Users = make([]*queue.Job, 0, b.BatchSize)
-	b.Products = make([]*queue.Job, 0, b.BatchSize)
-	b.Orders = make([]*queue.Job, 0, b.BatchSize)
+	b.users = make([]*queue.Job, 0, b.batchSize)
+	b.products = make([]*queue.Job, 0, b.batchSize)
+	b.orders = make([]*queue.Job, 0, b.batchSize)
 
-	b.Mutex.Unlock()
+	b.mutex.Unlock()
 
 	b.groupAndPush(users)
 	b.groupAndPush(products)
 	b.groupAndPush(orders)
 }
 
+func (b *Batcher) flushUsersLocked() {
+	users := b.users 
+	b.users = make([]*queue.Job, 0, b.batchSize)
+	b.mutex.Unlock()
+	b.groupAndPush(users)
+	b.mutex.Lock()
+}
+
 func (b *Batcher) groupAndPush(jobs []*queue.Job) {
 	if len(jobs) == 0 {
-		return 
+		return
 	}
 
-	creates := make([]*queue.Job, b.BatchSize)
-	reads := make([]*queue.Job, b.BatchSize)
-	updates := make([]*queue.Job, b.BatchSize)
-	deletes := make([]*queue.Job, b.BatchSize)
+	creates := make([]*queue.Job, 0, b.batchSize)
+	reads := make([]*queue.Job, 0, b.batchSize)
+	updates := make([]*queue.Job, 0, b.batchSize)
+	deletes := make([]*queue.Job, 0, b.batchSize)
 
 	for _, job := range jobs {
 		switch job.CRUD {
-		case queue.Create: 
+		case queue.Create:
 			creates = append(creates, job)
-		case queue.Read: 
+		case queue.Read:
 			reads = append(reads, job)
-		case queue.Update: 
-			updates = append(updates, job)	
-		case queue.Delete: 
+		case queue.Update:
+			updates = append(updates, job)
+		case queue.Delete:
 			deletes = append(deletes, job)
 		}
 	}
 
 	if len(creates) > 0 {
-		b.Queue.Pushs(creates)
+		b.queue.Pushs(creates)
 	}
 	if len(reads) > 0 {
-		b.Queue.Pushs(reads)
+		b.queue.Pushs(reads)
 	}
 	if len(updates) > 0 {
-		b.Queue.Pushs(updates)
+		b.queue.Pushs(updates)
 	}
 	if len(deletes) > 0 {
-		b.Queue.Pushs(deletes)
+		b.queue.Pushs(deletes)
 	}
 }
 
-
-// If timer runs out, flush everything 
 func (b *Batcher) run() {
 	for {
 		select {
-		case <-b.Timer.C:
+		case <-b.timer.C:
 			b.flush()
-			b.Timer.Reset(b.Timeout)
-		case <-b.StopCh:
+			b.timer.Reset(b.timeout)
+		case <-b.stopCh:
 			return
 		}
 	}
@@ -115,14 +128,14 @@ func (b *Batcher) run() {
 
 func NewBatcher(queue queue.Queue, batchSize int, timeout time.Duration) *Batcher {
 	b := &Batcher{
-		Queue:     queue,
-		BatchSize: batchSize,
-		Timeout:   timeout,
-		Users:     make([]*queue.Job, 0, batchSize),
-		Products:  make([]*queue.Job, 0, batchSize),
-		Orders:    make([]*queue.Job, 0, batchSize),
-		Timer:     time.NewTimer(timeout),
-		StopCh:    make(chan struct{}),
+		queue:     queue,
+		batchSize: batchSize,
+		timeout:   timeout,
+		users:     make([]*queue.Job, 0, batchSize),
+		products:  make([]*queue.Job, 0, batchSize),
+		orders:    make([]*queue.Job, 0, batchSize),
+		timer:     time.NewTimer(timeout),
+		stopCh:    make(chan struct{}),
 	}
 
 	go b.run()
