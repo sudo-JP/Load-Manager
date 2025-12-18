@@ -3,36 +3,149 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sudo-JP/Load-Manager/load-manager/internal/batcher"
+	"github.com/sudo-JP/Load-Manager/load-manager/internal/queue"
 )
 
-func GetOrdersHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(r.Body)
+type CreateOrderDTO struct {
+	UserID    int `json:"user_id" binding:"required"`
+	ProductID int `json:"product_id" binding:"required"`
+	Quantity  int `json:"quantity" binding:"required,min=1"`
 }
 
-func DeleteOrdersHandler(w http.ResponseWriter, r *http.Request) {
+func CreateOrder(batch *batcher.Batcher) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var order CreateOrderDTO
 
+		if err := c.ShouldBindJSON(&order); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		payload, _ := json.Marshal(order)
+
+		job := &queue.Job{
+			ID:        queue.GetID(),
+			Resource:  queue.Order,
+			CRUD:      queue.Create,
+			Payload:   payload,
+			Priority:  0,
+			CreatedAt: time.Now(),
+		}
+
+		batch.AddOrder(job)
+
+		c.Status(http.StatusOK)
+	}
 }
 
-func UpdateOrdersHandler(w http.ResponseWriter, r *http.Request) {
-
+type GetOrderDTO struct {
+	OrderID int `json:"order_id" binding:"required"`
 }
 
-func CreateOrdersHandler(w http.ResponseWriter, r *http.Request) {
+func GetOrder(batch *batcher.Batcher) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		orderIDStr := c.Query("order_id")
 
+		if orderIDStr == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "order_id required"})
+			return
+		}
+
+		orderID, err := strconv.Atoi(orderIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid order_id"})
+			return
+		}
+
+		payload, _ := json.Marshal(GetOrderDTO{OrderID: orderID})
+
+		job := &queue.Job{
+			ID:        queue.GetID(),
+			Resource:  queue.Order,
+			CRUD:      queue.Read,
+			Payload:   payload,
+			Priority:  0,
+			CreatedAt: time.Now(),
+		}
+
+		batch.AddOrder(job)
+
+		c.Status(http.StatusOK)
+	}
 }
 
-func OrderRoutes(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		GetOrdersHandler(w, r)
-	case http.MethodPost:
-		CreateOrdersHandler(w, r)
-	case http.MethodPut:
-		UpdateOrdersHandler(w, r)
-	case http.MethodDelete:
-		DeleteOrdersHandler(w, r)
-	default:
-		http.Error(w, "bad method", http.StatusMethodNotAllowed)
+type UpdateOrderDTO struct {
+	OrderID  int `json:"order_id" binding:"required"`
+	Quantity int `json:"quantity" binding:"required,min=1"`
+}
+
+func UpdateOrder(batch *batcher.Batcher) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var order UpdateOrderDTO
+
+		if err := c.ShouldBindJSON(&order); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		payload, _ := json.Marshal(order)
+
+		job := &queue.Job{
+			ID:        queue.GetID(),
+			Resource:  queue.Order,
+			CRUD:      queue.Update,
+			Payload:   payload,
+			Priority:  0,
+			CreatedAt: time.Now(),
+		}
+
+		batch.AddOrder(job)
+
+		c.Status(http.StatusOK)
+	}
+}
+
+type DeleteOrderDTO struct {
+	OrderID int `json:"order_id" binding:"required"`
+}
+
+func DeleteOrder(batch *batcher.Batcher) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		orderIDStr := c.Query("order_id")
+
+		if orderIDStr == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "order_id required"})
+			return
+		}
+
+		orderID, err := strconv.Atoi(orderIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid order_id"})
+			return
+		}
+
+		payload, _ := json.Marshal(DeleteOrderDTO{OrderID: orderID})
+
+		job := &queue.Job{
+			ID:        queue.GetID(),
+			Resource:  queue.Order,
+			CRUD:      queue.Delete,
+			Payload:   payload,
+			Priority:  0,
+			CreatedAt: time.Now(),
+		}
+
+		batch.AddOrder(job)
+
+		c.Status(http.StatusOK)
 	}
 }
