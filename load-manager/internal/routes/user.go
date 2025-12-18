@@ -146,8 +146,9 @@ func DeleteUser(batch *batcher.Batcher) gin.HandlerFunc {
 			CreatedAt: time.Now(),
 		}
 
-		c.Status(http.StatusOK)
 
 		batch.AddUser(job)
+
+		c.Status(http.StatusOK)
 	}
 }
