@@ -37,7 +37,7 @@ func (b *Batcher) AddProduct(job *queue.Job) {
 
 	b.products = append(b.products, job)
 	if len(b.products) >= b.batchSize {
-		b.flushUsersLocked()
+		b.flushProductsLocked()
 	}
 }
 
@@ -47,7 +47,7 @@ func (b *Batcher) AddOrder(job *queue.Job) {
 
 	b.orders = append(b.orders, job)
 	if len(b.orders) >= b.batchSize {
-		b.flushUsersLocked()
+		b.flushOrdersLocked()
 	}
 }
 
@@ -67,6 +67,22 @@ func (b *Batcher) flush() {
 	b.groupAndPush(users)
 	b.groupAndPush(products)
 	b.groupAndPush(orders)
+}
+
+func (b *Batcher) flushProductsLocked() {
+	products := b.products
+	b.products = make([]*queue.Job, 0, b.batchSize)
+	b.mutex.Unlock()
+	b.groupAndPush(products)
+	b.mutex.Lock()
+}
+
+func (b *Batcher) flushOrdersLocked() {
+	orders := b.orders
+	b.orders = make([]*queue.Job, 0, b.batchSize)
+	b.mutex.Unlock()
+	b.groupAndPush(orders)
+	b.mutex.Lock()
 }
 
 func (b *Batcher) flushUsersLocked() {
@@ -126,9 +142,14 @@ func (b *Batcher) run() {
 	}
 }
 
-func NewBatcher(queue queue.Queue, batchSize int, timeout time.Duration) *Batcher {
+func (b *Batcher) Stop() {
+	close(b.stopCh)
+	b.flush()
+}
+
+func NewBatcher(q queue.Queue, batchSize int, timeout time.Duration) *Batcher {
 	b := &Batcher{
-		queue:     queue,
+		queue:     q,
 		batchSize: batchSize,
 		timeout:   timeout,
 		users:     make([]*queue.Job, 0, batchSize),

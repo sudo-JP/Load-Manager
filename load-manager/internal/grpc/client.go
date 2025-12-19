@@ -1,6 +1,8 @@
 package grpc
 
 import (
+	"log"
+
 	"github.com/sudo-JP/Load-Manager/load-manager/api/proto/order"
 	"github.com/sudo-JP/Load-Manager/load-manager/api/proto/product"
 	"github.com/sudo-JP/Load-Manager/load-manager/api/proto/user"
@@ -33,6 +35,10 @@ func NewBackendClient(address string) (*BackendClient, error) {
 
 // For defer 
 func (bc *BackendClient) Close() {
-	bc.conn.Close()
+	err := bc.conn.Close()
+
+	if err != nil {
+		log.Println(err)
+	}
 }
 

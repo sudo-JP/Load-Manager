@@ -8,7 +8,7 @@ import (
 type BackendNode struct {
 	ID 				int 
 	Host 			string 
-	Port 			string 
+	Port 			int	
 	Health 			bool
 	ActiveReqCount 	int32	
 }
@@ -19,7 +19,7 @@ type Registry struct {
 	nextID 	int // For setting backend id 
 }
 
-func (r *Registry) Add(host string, port string) {
+func (r *Registry) Add(host string, port int) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	node := BackendNode{
