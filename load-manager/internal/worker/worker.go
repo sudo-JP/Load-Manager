@@ -2,12 +2,15 @@ package worker
 
 import (
 	"errors"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/sudo-JP/Load-Manager/load-manager/internal/grpc"
 	"github.com/sudo-JP/Load-Manager/load-manager/internal/queue"
 	"github.com/sudo-JP/Load-Manager/load-manager/internal/registry"
 	"github.com/sudo-JP/Load-Manager/load-manager/internal/selector"
+
 
 	"log"
 )
@@ -24,7 +27,8 @@ type Worker struct {
 	queue 		queue.Queue
 	registry 	*registry.Registry
 	selector 	selector.Selector	
-	client 		*grpc.BackendClient
+	clients 	map[string]*grpc.BackendClient // key is host:port
+	clientsMut 	sync.RWMutex	
 	stopCh 		chan struct{}
 	workers 	int 
 	strategy 	LoadBalancingStrategy
@@ -58,20 +62,6 @@ func groupByCRUD(jobs []*queue.Job) map[queue.Operation][]*queue.Job {
 	return grouped
 }
 
-func (w *Worker) sendUserJobs(node *registry.BackendNode, 
-	crud queue.Operation, jobs []*queue.Job) {
-	// TODO: call gRPC
-}
-
-func (w *Worker) sendProductJobs(node *registry.BackendNode, 
-	crud queue.Operation, jobs []*queue.Job) {
-	// TODO: call gRPC
-}
-
-func (w *Worker) sendOrdersJobs(node *registry.BackendNode, 
-	crud queue.Operation, jobs []*queue.Job) {
-	// TODO: call gRPC
-}
 
 func (w *Worker) sendToBackend(node *registry.BackendNode, resource queue.JobType, 
 	crud queue.Operation, jobs []*queue.Job) {
@@ -94,8 +84,8 @@ func (w *Worker) sendToBackend(node *registry.BackendNode, resource queue.JobTyp
 
 func (w *Worker) mixedStat(jobs []*queue.Job) error {
 	node := w.selector.SelectNode(w.registry.All())
-	if node != nil {
-		return errors.New("No available nodes")
+	if node == nil {
+		return errors.New("no available nodes")
 	}
 	// just optimization for job same type and operation to be tgt  
 	grouped := groupByResource(jobs)		
@@ -129,7 +119,7 @@ func (w *Worker) perResourceStrat(jobs []*queue.Job) {
 	// optimization 
 	for resource, resourceJobs := range groupedResource {
 		node := w.selector.SelectNode(w.registry.All())
-		if node != nil {
+		if node == nil {
 			continue 
 		}			
 		
@@ -154,7 +144,7 @@ func (w *Worker) perOperationAndResouceStrat(jobs []*queue.Job) error {
 			node := w.selector.SelectNode(w.registry.All())
 
 			if node == nil {
-				return errors.New("No available nodes")
+				return errors.New("no available nodes")
 			}
 
 			w.sendToBackend(node, resource, crud, resourceJobs)
@@ -211,19 +201,65 @@ func (w *Worker) run() {
 	}
 }
 
+func (w *Worker) getClient(node *registry.BackendNode) (*grpc.BackendClient, error) {
+	addr := fmt.Sprintf("%s:%d", node.Host, node.Port)
+
+	w.clientsMut.RLock()
+	client, ok := w.clients[addr]
+	w.clientsMut.RUnlock()
+
+	if ok {
+		return client, nil 
+	}
+
+	// New client connection
+	w.clientsMut.Lock()
+	defer w.clientsMut.Unlock()
+
+	client, err := grpc.NewBackendClient(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	w.clients[addr] = client
+	return client, nil
+}
+
+func (w *Worker) sendUserJobs(node *registry.BackendNode, 
+	crud queue.Operation, jobs []*queue.Job) {
+	switch crud {
+	case queue.Create: 
+		w.CreateUsers(node, jobs)
+	case queue.Read:
+
+	}
+}
+
+func (w *Worker) sendProductJobs(node *registry.BackendNode, 
+	crud queue.Operation, jobs []*queue.Job) {
+	// TODO: call gRPC
+}
+
+func (w *Worker) sendOrdersJobs(node *registry.BackendNode, 
+	crud queue.Operation, jobs []*queue.Job) {
+	// TODO: call gRPC
+}
+
 func (w *Worker) Stop() {
+
 	close(w.stopCh)
 }
 
 func NewWorker(q queue.Queue, reg *registry.Registry, selector selector.Selector, 
-	client *grpc.BackendClient, workers int, strat LoadBalancingStrategy) *Worker {
+	clients map[string]*grpc.BackendClient, workers int, strat LoadBalancingStrategy) *Worker {
 	w := &Worker{
-		queue: q, 
-		registry: reg, 
-		client: client, 
-		workers: workers, 
-		stopCh: make(chan struct{}), 
-		strategy: strat, 
+		queue: 		q, 
+		registry: 	reg, 
+		clients: 	clients, 
+		selector: 	selector,
+		workers: 	workers, 
+		stopCh: 	make(chan struct{}), 
+		strategy: 	strat, 
 	}
 
 	for range workers {
