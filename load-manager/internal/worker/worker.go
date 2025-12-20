@@ -231,18 +231,40 @@ func (w *Worker) sendUserJobs(node *registry.BackendNode,
 	case queue.Create: 
 		w.CreateUsers(node, jobs)
 	case queue.Read:
-
+		w.GetUsers(node, jobs)
+	case queue.Update:
+		w.UpdateUsers(node, jobs)
+	case queue.Delete:
+		w.DeleteUsers(node, jobs)
 	}
 }
 
 func (w *Worker) sendProductJobs(node *registry.BackendNode, 
 	crud queue.Operation, jobs []*queue.Job) {
-	// TODO: call gRPC
+	switch crud {
+	case queue.Create:
+		w.CreateProducts(node, jobs)
+	case queue.Read:
+		w.GetProducts(node, jobs)
+	case queue.Update:
+		w.UpdateProducts(node, jobs)
+	case queue.Delete:
+		w.DeleteProducts(node, jobs)
+	}
 }
 
 func (w *Worker) sendOrdersJobs(node *registry.BackendNode, 
 	crud queue.Operation, jobs []*queue.Job) {
-	// TODO: call gRPC
+	switch crud {
+	case queue.Create:
+		w.CreateOrders(node, jobs)
+	case queue.Read:
+		w.GetOrders(node, jobs)
+	case queue.Update:
+		w.UpdateOrders(node, jobs)
+	case queue.Delete:
+		w.DeleteOrders(node, jobs)
+	}
 }
 
 func (w *Worker) Stop() {
