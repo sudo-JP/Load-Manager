@@ -268,7 +268,6 @@ func (w *Worker) sendOrdersJobs(node *registry.BackendNode,
 }
 
 func (w *Worker) Stop() {
-
 	close(w.stopCh)
 }
 

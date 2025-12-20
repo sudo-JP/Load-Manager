@@ -1,8 +1,13 @@
 package registry
 
 import (
+	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type BackendNode struct {
@@ -81,5 +86,22 @@ func (r *Registry) HealthCheckLoop() {
 }
 
 func (r *Registry) checkHealth(node *BackendNode) bool {
-	return false 
+	_, cancel := context.WithTimeout(context.Background(), 2 * time.Second)
+	defer cancel()
+
+	addr := fmt.Sprintf("%s:%d", node.Host, node.Port)
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return false 
+	}
+
+	defer conn.Close()
+	return true 
+}
+
+func NewRegistry() *Registry {
+	return &Registry{
+		Nodes: make([]*BackendNode, 0),
+		nextID: 0, 
+	}
 }
