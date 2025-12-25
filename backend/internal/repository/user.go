@@ -13,6 +13,25 @@ type User struct {
 	db *database.Database
 }
 
+func (r *User) CreateUser(ctx context.Context, user model.User)  (*model.User, error) {
+	u := model.User {
+		Name: user.Name, 
+		Email: user.Email, 
+		Password: user.Password,
+	}
+
+	err := r.db.Pool.QueryRow(
+		ctx,
+		"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING user_id;",
+		user.Name, user.Email, user.Password,
+	).Scan(&u.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
 // Bulk create users
 func (r *User) CreateUsers(ctx context.Context, users []model.User) error {
 	if len(users) == 0 {
@@ -58,6 +77,19 @@ func (r *User) GetByEmail(ctx context.Context, email string) (*model.User, error
 
 	if err != nil {
 		return nil, errors.New("unable to get user by email")
+	}
+	return &u, nil
+}
+
+// GetById fetches a user by id
+func (r *User) GetById(ctx context.Context, userId int) (*model.User, error) {
+	var u model.User
+	err := r.db.Pool.QueryRow(ctx,
+		"SELECT user_id, name, email, password FROM users WHERE user_id=$1",
+		userId,
+	).Scan(&u.UserId, &u.Name, &u.Email, &u.Password)
+	if err != nil {
+		return nil, err
 	}
 	return &u, nil
 }

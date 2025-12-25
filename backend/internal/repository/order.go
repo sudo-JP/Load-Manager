@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +13,18 @@ import (
 
 type Order struct {
 	db *database.Database
+}
+
+func (r *Order) CreateOrder(ctx context.Context, order model.Order) (*model.Order, error) {
+	err := r.db.Pool.QueryRow(
+		ctx,
+		"INSERT INTO orders (user_id, product_id, quantity) VALUES ($1, $2, $3) RETURNING order_id, created_at;",
+		order.UserId, order.ProductId, order.Quantity).Scan(&order.OrderId, &order.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+	return &order, nil
 }
 
 // Bulk create orders, updates each order's created_at if provided
@@ -105,6 +118,25 @@ func (r *Order) GetByProduct(ctx context.Context, userId int, productId int, lim
 	return orders, nil
 }
 
+// Single update 
+func (r *Order) UpdateOrder(ctx context.Context, order model.Order) error {
+	row, err := r.db.Pool.Exec(
+		ctx, 
+		"UPDATE orders SET product_id = $1, user_id = $2, quantity = $3 WHERE order_id = $4;", 
+		order.ProductId, order.UserId, order.Quantity, order.OrderId, 
+		)
+
+	if err != nil {
+		return err 
+	}
+
+	if row.RowsAffected() <= 0 {
+		return errors.New("could not update order")
+	}
+
+	return nil 
+}
+
 // Bulk update orders
 func (r *Order) UpdateOrders(ctx context.Context, orders []model.Order) error {
 	// Place holders
@@ -150,6 +182,26 @@ func (r *Order) UpdateOrders(ctx context.Context, orders []model.Order) error {
 	}
 
 	return nil
+}
+
+// Single delete
+func (r *Order) DeleteOrder(ctx context.Context, orderID int) error {
+	row, err := r.db.Pool.Exec(
+		ctx, 
+		"DELETE FROM orders WHERE order_id = $1", 
+		orderID, 
+		)
+
+	if err != nil {
+		return err 
+	}
+
+	if row.RowsAffected() <= 0 {
+		return errors.New("could not delete order")
+	}
+
+	return nil 
+
 }
 
 // Bulk delete orders by ID

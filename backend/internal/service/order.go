@@ -124,6 +124,18 @@ func (svc *Order) CreateOrders(ctx context.Context, orders []model.Order) error 
 	return nil
 }
 
+// CreateOrder creates a single order and returns the created record
+func (svc *Order) CreateOrder(ctx context.Context, order model.Order) (model.Order, error) {
+	created, err := svc.repo.CreateOrder(ctx, order)
+	if err != nil {
+		return model.Order{}, fmt.Errorf("repository create order: %w", err)
+	}
+	if created == nil {
+		return model.Order{}, fmt.Errorf("order not created")
+	}
+	return *created, nil
+}
+
 // ProtoGetOrders handles gRPC GetOrders request with pagination and filters
 func (svc *Order) ProtoGetOrders(ctx context.Context, req *pb.GetOrdersRequest) (*pb.GetOrdersResponse, error) {
 	userId := int(req.UserId)

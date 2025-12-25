@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"errors"
 	"runtime"
 	"strings"
@@ -149,6 +150,18 @@ func (us *User) GetUser(ctx context.Context, email string) (model.User, error) {
 	u, err := us.repo.GetByEmail(ctx, email)
 	if err != nil {
 		return model.User{}, err
+	}
+	return *u, nil
+}
+
+// GetUserById fetches a single user by id
+func (us *User) GetUserById(ctx context.Context, id int) (model.User, error) {
+	u, err := us.repo.GetById(ctx, id)
+	if err != nil {
+		return model.User{}, err
+	}
+	if u == nil {
+		return model.User{}, fmt.Errorf("user not found")
 	}
 	return *u, nil
 }

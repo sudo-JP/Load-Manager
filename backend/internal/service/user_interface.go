@@ -14,6 +14,7 @@ type UserServiceInterface interface {
 	UpdateUsers(ctx context.Context, updates []model.User) error
 	DeleteUsers(ctx context.Context, emails []string) error
 	GetUser(ctx context.Context, email string) (model.User, error)
+	GetUserById(ctx context.Context, id int) (model.User, error)
 	ListUsers(ctx context.Context) ([]model.User, error)
 
 	// Proto

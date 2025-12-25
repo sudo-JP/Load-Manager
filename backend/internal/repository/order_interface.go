@@ -8,6 +8,7 @@ import (
 
 type OrderRepositoryInterface interface {
 	// Create
+	CreateOrder(ctx context.Context, order model.Order) (*model.Order, error)
 	CreateOrders(ctx context.Context, orders []model.Order) error
 
 	// Reads
@@ -16,8 +17,10 @@ type OrderRepositoryInterface interface {
 	GetByProduct(ctx context.Context, userId int, productId int, limit int, offset int) ([]model.Order, error)
 
 	// Update
+	UpdateOrder(ctx context.Context, order model.Order) error
 	UpdateOrders(ctx context.Context, orders []model.Order) error
 
 	// Deletes
+	DeleteOrder(ctx context.Context, orderID int) error
 	DeleteOrders(ctx context.Context, orderIDs []int) error
 }

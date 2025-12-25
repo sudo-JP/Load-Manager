@@ -95,7 +95,9 @@ func (r *Registry) checkHealth(node *BackendNode) bool {
 		return false 
 	}
 
-	defer conn.Close()
+	defer func() {
+		err = conn.Close()
+	}()
 	return true 
 }
 

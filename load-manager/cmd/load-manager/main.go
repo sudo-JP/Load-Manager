@@ -219,6 +219,24 @@ func init() {
 	rootCmd.Flags().IntVarP(&batTimeout, "batchtimeout", "t", 0, "Batch Timeout")
 	rootCmd.Flags().IntVarP(&batSize, "batchsize", "b", 0, "Batch Size")
 	rootCmd.Flags().IntVarP(&numWorkers, "workers", "w", 0, "Worker size")
+
+	// Required 
+	err := rootCmd.MarkFlagRequired("address")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = rootCmd.MarkFlagRequired("queue")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = rootCmd.MarkFlagRequired("selector")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = rootCmd.MarkFlagRequired("load")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
