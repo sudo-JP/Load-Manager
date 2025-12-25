@@ -4,6 +4,7 @@ import (
 	"os"
 	"errors"
 	"fmt"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -13,29 +14,25 @@ type Config struct {
 	POSTGRES_PORT 		string 
 	POSTGRES_DB 		string 
 }
-
 func DatabaseConfig() (string, error) {
-	POSTGRES_USER := os.Getenv("POSTGRES_USER")
-	POSTGRES_PASSWORD := os.Getenv("POSTGRES_PASSWORD")
-	POSTGRES_HOST := os.Getenv("POSTGRES_HOST")
-	POSTGRES_PORT := os.Getenv("POSTGRES_PORT")
-	POSTGRES_DB := os.Getenv("POSTGRES_DB")
-	
+    // Load .env file (do this once at startup)
+    if err := godotenv.Load(); err != nil {
+        return "", fmt.Errorf("error loading .env file: %w", err)
+    }
 
-	if POSTGRES_USER == "" ||
-		POSTGRES_PASSWORD == "" ||
-		POSTGRES_HOST == "" ||
-		POSTGRES_PORT == "" ||
-		POSTGRES_DB == "" {
-		return "", errors.New("one or more required POSTGRES_* environment variables are missing")
-	}
+    user := os.Getenv("POSTGRES_USER")
+    password := os.Getenv("POSTGRES_PASSWORD")
+    host := os.Getenv("POSTGRES_HOST")
+    port := os.Getenv("POSTGRES_PORT")
+    db := os.Getenv("POSTGRES_DB")
 
-	URL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		POSTGRES_USER,
-		POSTGRES_PASSWORD, 
-		POSTGRES_HOST,
-		POSTGRES_PORT, 
-		POSTGRES_DB)
+    if user == "" || password == "" || host == "" || port == "" || db == "" {
+        return "", errors.New("one or more required POSTGRES_* environment variables are missing")
+    }
 
-	return URL, nil
+    url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+        user, password, host, port, db,
+    )
+
+    return url, nil
 }

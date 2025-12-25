@@ -140,23 +140,25 @@ func startHTTPServer(
 	productHandler := routes.NewProductHandler(productService)
 	orderHandler := routes.NewOrderHandler(orderService)
 
+	single := router.Group("/single")
+
 	// User routes
-	router.POST("/users", userHandler.CreateUser)
-	router.GET("/users", userHandler.GetUser)
-	router.PUT("/users", userHandler.UpdateUser)
-	router.DELETE("/users", userHandler.DeleteUser)
+	single.POST("/user", userHandler.CreateUser)
+	single.GET("/user", userHandler.GetUser)
+	single.PUT("/user", userHandler.UpdateUser)
+	single.DELETE("/user", userHandler.DeleteUser)
 
 	// Product routes
-	router.POST("/products", productHandler.CreateProduct)
-	router.GET("/products", productHandler.GetProduct)
-	router.PUT("/products", productHandler.UpdateProduct)
-	router.DELETE("/products", productHandler.DeleteProduct)
+	single.POST("/product", productHandler.CreateProduct)
+	single.GET("/product", productHandler.GetProduct)
+	single.PUT("/product", productHandler.UpdateProduct)
+	single.DELETE("/product", productHandler.DeleteProduct)
 
 	// Order routes
-	router.POST("/orders", orderHandler.CreateOrder)
-	router.GET("/orders", orderHandler.GetOrders)
-	router.PUT("/orders", orderHandler.UpdateOrder)
-	router.DELETE("/orders", orderHandler.DeleteOrder)
+	single.POST("/order", orderHandler.CreateOrder)
+	single.GET("/order", orderHandler.GetOrders)
+	single.PUT("/order", orderHandler.UpdateOrder)
+	single.DELETE("/order", orderHandler.DeleteOrder)
 
 	return &http.Server{
 		Addr:    ":9000",
