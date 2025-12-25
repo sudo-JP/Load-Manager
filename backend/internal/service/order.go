@@ -266,6 +266,22 @@ func (svc *Order) DeleteOrders(ctx context.Context, orderIDs []int) error {
 	return nil
 }
 
+// UpdateOrder updates a single order
+func (svc *Order) UpdateOrder(ctx context.Context, order model.Order) error {
+	if err := svc.repo.UpdateOrder(ctx, order); err != nil {
+		return fmt.Errorf("repository update order: %w", err)
+	}
+	return nil
+}
+
+// DeleteOrder deletes a single order by ID
+func (svc *Order) DeleteOrder(ctx context.Context, orderId int) error {
+	if err := svc.repo.DeleteOrder(ctx, orderId); err != nil {
+		return fmt.Errorf("repository delete order: %w", err)
+	}
+	return nil
+}
+
 // Constructor
 func NewOrderService(
 	repo repository.OrderRepositoryInterface,

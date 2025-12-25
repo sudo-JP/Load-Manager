@@ -13,10 +13,10 @@ type User struct {
 	db *database.Database
 }
 
-func (r *User) CreateUser(ctx context.Context, user model.User)  (*model.User, error) {
-	u := model.User {
-		Name: user.Name, 
-		Email: user.Email, 
+func (r *User) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
+	u := model.User{
+		Name:     user.Name,
+		Email:    user.Email,
 		Password: user.Password,
 	}
 
@@ -145,6 +145,37 @@ func (r *User) UpdateUsername(ctx context.Context, email string, name string) er
 	return nil
 }
 
+// Update user (singular)
+func (r *User) UpdateUser(ctx context.Context, user model.User) error {
+	res, err := r.db.Pool.Exec(
+		ctx,
+		"UPDATE users SET name=$1, password=$2 WHERE email=$3",
+		user.Name, user.Password, user.Email,
+	)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+// Delete user (singular)
+func (r *User) DeleteUser(ctx context.Context, email string) error {
+	res, err := r.db.Pool.Exec(
+		ctx,
+		"DELETE FROM users WHERE email=$1",
+		email,
+	)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
 
 // Bulk delete users by email
 func (r *User) DeleteUsers(ctx context.Context, emails []string) error {

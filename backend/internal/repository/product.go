@@ -70,6 +70,20 @@ func (r *Product) ListAll(ctx context.Context) ([]model.Product, error) {
 	return products, nil
 }
 
+// CreateProduct inserts a single product
+func (r *Product) CreateProduct(ctx context.Context, product model.Product) (*model.Product, error) {
+	err := r.db.Pool.QueryRow(
+		ctx,
+		"INSERT INTO products (name, version) VALUES ($1, $2) RETURNING product_id, created_at",
+		product.Name, product.Version,
+	).Scan(&product.ProductId, &product.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
 // CreateProducts inserts multiple products in a single transaction
 func (r *Product) CreateProducts(ctx context.Context, products []model.Product) error {
 	if len(products) == 0 {
@@ -93,6 +107,21 @@ func (r *Product) CreateProducts(ctx context.Context, products []model.Product) 
 	}
 
 	return tx.Commit(ctx)
+}
+
+// UpdateProduct updates a single product
+func (r *Product) UpdateProduct(ctx context.Context, product model.Product) error {
+	result, err := r.db.Pool.Exec(ctx,
+		"UPDATE products SET name = $1, version = $2 WHERE product_id = $3",
+		product.Name, product.Version, product.ProductId,
+	)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return errors.New("product not found")
+	}
+	return nil
 }
 
 // UpdateProducts updates multiple products in a single transaction
@@ -121,6 +150,18 @@ func (r *Product) UpdateProducts(ctx context.Context, products []model.Product) 
 	}
 
 	return tx.Commit(ctx)
+}
+
+// DeleteProduct deletes a single product by ID
+func (r *Product) DeleteProduct(ctx context.Context, productId int) error {
+	result, err := r.db.Pool.Exec(ctx, "DELETE FROM products WHERE product_id = $1", productId)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return errors.New("product not found")
+	}
+	return nil
 }
 
 // DeleteProducts deletes multiple products by IDs in a single transaction

@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"sync"
 
 	pb "github.com/sudo-JP/Load-Manager/backend/api/proto/product"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"github.com/sudo-JP/Load-Manager/backend/internal/model"
 	"github.com/sudo-JP/Load-Manager/backend/internal/repository"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -28,30 +29,38 @@ func validateProduct(jobs <-chan model.Product, results chan<- model.Product, wg
 
 func protoToProduct(product *pb.Product) model.Product {
 	return model.Product{
-		ProductId: 	int(product.ProductId),
-		Name: 		product.Name, 
-		Version: 	product.Version, 
+		ProductId: int(product.ProductId),
+		Name:      product.Name,
+		Version:   product.Version,
 	}
 }
 
 func protoToProducts(products []*pb.Product) []model.Product {
 	result := make([]model.Product, len(products))
-	for i, product := range(products) {
+	for i, product := range products {
 		result[i] = protoToProduct(product)
 	}
 	return result
 }
 
 func (ps *Product) ProtoCreateProducts(ctx context.Context, req *pb.CreateProductsRequest) (*emptypb.Empty, error) {
-	products := protoToProducts(req.Products)	
+	products := protoToProducts(req.Products)
 	if len(products) == 0 {
-		return &emptypb.Empty{}, nil 
-	}	
-	err := ps.CreateProducts(ctx, products) 
+		return &emptypb.Empty{}, nil
+	}
+	err := ps.CreateProducts(ctx, products)
 	if err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// CreateProduct creates a single product
+func (ps *Product) CreateProduct(ctx context.Context, product model.Product) (*model.Product, error) {
+	if product.Name == "" {
+		return nil, fmt.Errorf("product name is required")
+	}
+	return ps.repo.CreateProduct(ctx, product)
 }
 
 // CreateProducts validates products concurrently and calls repository
@@ -65,7 +74,7 @@ func (ps *Product) CreateProducts(ctx context.Context, products []model.Product)
 	results := make(chan model.Product, len(products))
 	var wg sync.WaitGroup
 
-	for range(threadsNum) {
+	for range threadsNum {
 		wg.Add(1)
 		go validateProduct(jobs, results, &wg)
 	}
@@ -88,14 +97,14 @@ func (ps *Product) CreateProducts(ctx context.Context, products []model.Product)
 	return ps.repo.CreateProducts(ctx, validated)
 }
 
-func (ps *Product) ProtoGetProducts(ctx context.Context, 
+func (ps *Product) ProtoGetProducts(ctx context.Context,
 	req *pb.GetProductsRequest) (*pb.GetProductsResponse, error) {
-	var product model.Product	
+	var product model.Product
 	var products []model.Product
-	var err error 
+	var err error
 
 	if req.ProductId < 0 {
-		products, err = ps.ListProducts(ctx)	
+		products, err = ps.ListProducts(ctx)
 	} else {
 		product, err = ps.GetProduct(ctx, int(req.ProductId))
 		products = []model.Product{product}
@@ -104,14 +113,14 @@ func (ps *Product) ProtoGetProducts(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	
-	pbProducts := make([]*pb.Product, len(products)) 
+
+	pbProducts := make([]*pb.Product, len(products))
 	for i, p := range products {
 		pbProducts[i] = &pb.Product{
-			ProductId: 	int64(p.ProductId),
-			Name: 		p.Name,
-			Version:    p.Version,
-    		CreatedAt: timestamppb.New(p.CreatedAt),
+			ProductId: int64(p.ProductId),
+			Name:      p.Name,
+			Version:   p.Version,
+			CreatedAt: timestamppb.New(p.CreatedAt),
 		}
 	}
 
@@ -134,52 +143,61 @@ func (ps *Product) ListProducts(ctx context.Context) ([]model.Product, error) {
 	return ps.repo.ListAll(ctx)
 }
 
-func (ps *Product) ProtoUpdateProducts(ctx context.Context, 
+func (ps *Product) ProtoUpdateProducts(ctx context.Context,
 	req *pb.UpdateProductsRequest) (*emptypb.Empty, error) {
 	products := protoToProducts(req.Products)
 	if len(products) == 0 {
 		return &emptypb.Empty{}, nil
 	}
-	err := ps.UpdateProducts(ctx, products) 
+	err := ps.UpdateProducts(ctx, products)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &emptypb.Empty{}, nil
 }
-
 
 // UpdateProducts updates multiple products
 func (ps *Product) UpdateProducts(ctx context.Context, products []model.Product) error {
 	return ps.repo.UpdateProducts(ctx, products)
 }
 
+// UpdateProduct updates a single product
+func (ps *Product) UpdateProduct(ctx context.Context, product model.Product) error {
+	return ps.repo.UpdateProduct(ctx, product)
+}
+
 func protoToProductIds(products []int64) []int {
-	result := make([]int, len(products))	
-	for i, id := range(products) {
+	result := make([]int, len(products))
+	for i, id := range products {
 		result[i] = int(id)
 	}
 	return result
 }
 
-func (ps *Product) ProtoDeleteProducts(ctx context.Context, 
+func (ps *Product) ProtoDeleteProducts(ctx context.Context,
 	req *pb.DeleteProductsRequest) (*emptypb.Empty, error) {
 	ids := protoToProductIds(req.ProductIds)
 	if len(ids) == 0 {
 		return &emptypb.Empty{}, nil
 	}
-	err := ps.DeleteProducts(ctx, ids) 
+	err := ps.DeleteProducts(ctx, ids)
 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &emptypb.Empty{}, nil
 }
 
 // DeleteProducts deletes multiple products by ID
 func (ps *Product) DeleteProducts(ctx context.Context, ids []int) error {
 	return ps.repo.DeleteProducts(ctx, ids)
+}
+
+// DeleteProduct deletes a single product by ID
+func (ps *Product) DeleteProduct(ctx context.Context, productId int) error {
+	return ps.repo.DeleteProduct(ctx, productId)
 }
 
 // Constructor

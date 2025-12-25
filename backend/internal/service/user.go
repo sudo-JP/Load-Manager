@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"errors"
+	"fmt"
 	"runtime"
 	"strings"
 	"sync"
@@ -42,17 +42,17 @@ func verifyUser(ctx context.Context, us *User, unverified *model.User) error {
 }
 
 func protoToUser(user *pb.User) model.User {
-	return model.User {
-		UserId: 	int(user.UserId), 
-		Name: 		user.Name, 
-		Email: 		user.Email,
-		Password: 	user.Password,
+	return model.User{
+		UserId:   int(user.UserId),
+		Name:     user.Name,
+		Email:    user.Email,
+		Password: user.Password,
 	}
 }
 
 func protoToUsers(users []*pb.User) []model.User {
 	result := make([]model.User, len(users))
-	for i, user := range(users) {
+	for i, user := range users {
 		result[i] = protoToUser(user)
 	}
 	return result
@@ -63,11 +63,24 @@ func (us *User) ProtoCreateUsers(ctx context.Context, req *pb.CreateUsersRequest
 	if len(users) == 0 {
 		return &emptypb.Empty{}, nil
 	}
-	
+
 	if err := us.CreateUsers(ctx, users); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// CreateUser creates a single user with password hashing
+func (us *User) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
+	saltPW := salt.Salt()
+	hashed := hash.SHA256(user.Password + saltPW)
+	user.Password = saltPW + ":" + hashed
+
+	created, err := us.repo.CreateUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
 }
 
 // CreateUsers hashes passwords concurrently and inserts into repo
@@ -78,7 +91,7 @@ func (us *User) CreateUsers(ctx context.Context, users []model.User) error {
 	results := make(chan model.User, len(users))
 	var wg sync.WaitGroup
 
-	for range(threadsNum) {
+	for range threadsNum {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -116,7 +129,7 @@ func (us *User) ProtoGetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb
 	var users []model.User
 	var u model.User
 	var err error
-	
+
 	if req.Email == "" {
 		users, err = us.ListUsers(ctx)
 		if err != nil {
@@ -131,12 +144,12 @@ func (us *User) ProtoGetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb
 		return nil, err
 	}
 
-	pbUsers := make([]*pb.User, len(users)) 
+	pbUsers := make([]*pb.User, len(users))
 	for i, user := range users {
 		pbUsers[i] = &pb.User{
-			UserId: 	int64(user.UserId),
-			Name: 		user.Name,
-			Email: 		user.Email, 
+			UserId: int64(user.UserId),
+			Name:   user.Name,
+			Email:  user.Email,
 		}
 	}
 
@@ -207,11 +220,10 @@ func (us *User) UpdateUsers(ctx context.Context, updates []model.User) error {
 	return nil
 }
 
-
 func protoToEmail(users []*pb.User) []string {
 	result := make([]string, len(users))
 
-	for i, user := range(users) {
+	for i, user := range users {
 		result[i] = user.Email
 	}
 	return result
@@ -231,6 +243,24 @@ func (us *User) DeleteUsers(ctx context.Context, emails []string) error {
 	return us.repo.DeleteUsers(ctx, emails)
 }
 
+// UpdateUser updates a single user (full update)
+func (us *User) UpdateUser(ctx context.Context, user model.User) error {
+	if err := verifyUser(ctx, us, &user); err != nil {
+		return err
+	}
+
+	// Hash new password
+	saltPW := salt.Salt()
+	hashed := hash.SHA256(user.Password + saltPW)
+	user.Password = saltPW + ":" + hashed
+
+	return us.repo.UpdateUser(ctx, user)
+}
+
+// DeleteUser deletes a single user by email
+func (us *User) DeleteUser(ctx context.Context, email string) error {
+	return us.repo.DeleteUser(ctx, email)
+}
 
 // Constructor
 func NewUserService(repo repository.UserRepositoryInterface) UserServiceInterface {
