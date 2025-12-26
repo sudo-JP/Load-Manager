@@ -1,6 +1,7 @@
-import plotting.plot as p
+#import plotting.plot as p
+from config.setup import start_backend
 
 if __name__ == '__main__':
-    p.plot()
+    start_backend(1)
 
     
