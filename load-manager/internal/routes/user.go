@@ -11,16 +11,16 @@ import (
 )
 
 type CreateUserDTO struct {
-    Name     string `json:"name" binding:"required"`
-    Email    string `json:"email" binding:"required,email"`
-    Password string `json:"password" binding:"required,min=8"`
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 
 func CreateUser(batch *batcher.Batcher) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user CreateUserDTO
 
-		// Bind respond 
+		// Bind respond
 		if err := c.ShouldBindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
@@ -31,12 +31,12 @@ func CreateUser(batch *batcher.Batcher) gin.HandlerFunc {
 		payload, _ := json.Marshal(user)
 
 		job := &queue.Job{
-			ID: 		queue.GetID(),
-			Resource: 	queue.User, 
-			CRUD: 		queue.Create,
-			Payload: 	payload, 
-			Priority: 	0, 
-			CreatedAt: 	time.Now(),
+			ID:        queue.GetID(),
+			Resource:  queue.User,
+			CRUD:      queue.Create,
+			Payload:   payload,
+			Priority:  0,
+			CreatedAt: time.Now(),
 		}
 
 		batch.AddUser(job)
@@ -45,21 +45,17 @@ func CreateUser(batch *batcher.Batcher) gin.HandlerFunc {
 	}
 }
 
-
 type GetUserDTO struct {
-	Email string `json:"email" binding:"required"`
-} 
+	Email string `json:"email"`
+}
 
 func GetUser(batch *batcher.Batcher) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		email := c.Query("email") 
+		email := c.Query("email")
 
-		if email == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "email required"})
-			return
-		}
-
-		payload, err := json.Marshal(DeleteUserDTO{Email: email})
+		// If no email provided, it will list all users
+		// Backend will handle empty email as "list all"
+		payload, err := json.Marshal(GetUserDTO{Email: email})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "marshal failed"})
 			return
@@ -80,19 +76,17 @@ func GetUser(batch *batcher.Batcher) gin.HandlerFunc {
 	}
 }
 
-
 type UpdateUserDTO struct {
-    Email    string `json:"email" binding:"required,email"`
-    Name     string `json:"name" binding:"required"`
-    Password string `json:"password" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
-
 
 func UpdateUser(batch *batcher.Batcher) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user UpdateUserDTO 
+		var user UpdateUserDTO
 
-		// Bind respond 
+		// Bind respond
 		if err := c.ShouldBindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
@@ -104,18 +98,18 @@ func UpdateUser(batch *batcher.Batcher) gin.HandlerFunc {
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(), 
+				"error": err.Error(),
 			})
-			return 
+			return
 		}
 
 		job := &queue.Job{
-			ID: 		queue.GetID(),
-			Resource: 	queue.User, 
-			CRUD: 		queue.Update,
-			Payload: 	payload, 
-			Priority: 	0, 
-			CreatedAt: 	time.Now(),
+			ID:        queue.GetID(),
+			Resource:  queue.User,
+			CRUD:      queue.Update,
+			Payload:   payload,
+			Priority:  0,
+			CreatedAt: time.Now(),
 		}
 
 		batch.AddUser(job)
@@ -124,14 +118,13 @@ func UpdateUser(batch *batcher.Batcher) gin.HandlerFunc {
 	}
 }
 
-
 type DeleteUserDTO struct {
 	Email string `json:"email" binding:"required"`
-} 
+}
 
 func DeleteUser(batch *batcher.Batcher) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		email := c.Query("email") 
+		email := c.Query("email")
 
 		if email == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "email required"})
@@ -152,7 +145,6 @@ func DeleteUser(batch *batcher.Batcher) gin.HandlerFunc {
 			Priority:  0,
 			CreatedAt: time.Now(),
 		}
-
 
 		batch.AddUser(job)
 
