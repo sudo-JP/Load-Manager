@@ -26,113 +26,110 @@ import (
 
 // CLI
 var (
-	addresses  	[]string // nodes addrs
-	queueType 	string
-	sel			string 
-	loadStrat 	string
+	addresses []string // nodes addrs
+	queueType string
+	sel       string
+	loadStrat string
 
-	// Batch 
-	batSize		int 
-	batTimeout	int
+	// Batch
+	batSize    int
+	batTimeout int
 
-	// Workers 
-	numWorkers	int 
+	// Workers
+	numWorkers int
 )
 
-// Global var 
+// Global var
 var regis = registry.NewRegistry()
 var s selector.Selector
 var q queue.Queue
 var strat worker.LoadBalancingStrategy
 
-
 var rootCmd = &cobra.Command{
-	Use: "load-manager",
-	Short: "Load Manager CLI for Distributed System",
-	Long: "A Load manager that distrubtes requests across multiple backends", 
-	Example: "load-manager --a host1:5000 --a host2:5000 --q FCFS --s RR --l M", 
+	Use:     "load-manager",
+	Short:   "Load Manager CLI for Distributed System",
+	Long:    "A Load manager that distrubtes requests across multiple backends",
+	Example: "load-manager --a host1:5000 --a host2:5000 --q FCFS --s RR --l M",
 	PreRunE: preRunE,
-	RunE: runE,
+	RunE:    runE,
 }
 
 func preRunE(cmd *cobra.Command, args []string) error {
-	// Check for algos 
+	// Check for algos
 	switch queueType {
-	case "FCFS": 
+	case "FCFS":
 		q = algorithms.NewFCFSQueue()
-	default: 
+	default:
 		return fmt.Errorf("invalid queue type %s. Must be: FCFS", queueType)
 	}
 
-	// Check for load strat 
+	// Check for load strat
 	switch loadStrat {
-	case "M": 
+	case "M":
 		strat = worker.Mixed
-	case "PR": 
+	case "PR":
 		strat = worker.PerResource
-	case "PO": 
+	case "PO":
 		strat = worker.PerOperation
-	case "PRO": 
-		strat = worker.PerResourceAndOperation	
-	default: 
+	case "PRO":
+		strat = worker.PerResourceAndOperation
+	default:
 		return fmt.Errorf("invalid load strat %s. Must be: M, PR, PO, PRO", loadStrat)
 	}
 
-	// Check for selector 
+	// Check for selector
 	switch sel {
-	case "RR": 
+	case "RR":
 		s = selector.NewRR()
 	default:
 		return fmt.Errorf("invalid selector %s. Must be: RR", sel)
 	}
 
-
-	return nil 
+	return nil
 }
 
 func runE(cmd *cobra.Command, args []string) error {
-	// Add the addresses to registry 
- 	err := parseAddrs(addresses) 
- 	if err != nil {
- 		return err 
- 	}
- 	
- 	// Health check 
- 	go regis.HealthCheckLoop()
+	// Add the addresses to registry
+	err := parseAddrs(addresses)
+	if err != nil {
+		return err
+	}
 
-	// Batcher 
+	// Health check
+	go regis.HealthCheckLoop()
+
+	// Batcher
 	clients := make(map[string]*grpc.BackendClient)
-	bat := batcher.NewBatcher(q, batSize, time.Duration(batTimeout) * time.Millisecond)
+	bat := batcher.NewBatcher(q, batSize, time.Duration(batTimeout)*time.Millisecond)
 
-	// Worker 
+	// Worker
 	wrk := worker.NewWorker(q, regis, s, clients, numWorkers, strat)
 
-	// Router 
+	// Router
 	router := gin.Default()
 	balancer := router.Group("balancer")
-	
-	// Users 
-	balancer.POST("/user", routes.CreateUser(bat))
-	balancer.GET("/user", routes.GetUser(bat))
-	balancer.PUT("/user", routes.UpdateUser(bat))
-	balancer.DELETE("/user", routes.DeleteUser(bat))
 
-	// Product 
-	balancer.POST("/product", routes.CreateProduct(bat))
-	balancer.GET("/product", routes.GetProduct(bat))
-	balancer.PUT("/product", routes.UpdateProduct(bat))
-	balancer.DELETE("/product", routes.DeleteProduct(bat))
+	// Users
+	balancer.POST("/users", routes.CreateUser(bat))
+	balancer.GET("/users", routes.GetUser(bat))
+	balancer.PUT("/users", routes.UpdateUser(bat))
+	balancer.DELETE("/users", routes.DeleteUser(bat))
 
-	// Order 
-	balancer.POST("/order", routes.CreateOrder(bat))
-	balancer.GET("/order", routes.GetOrder(bat))
-	balancer.PUT("/order", routes.UpdateOrder(bat))
-	balancer.DELETE("/order", routes.DeleteOrder(bat))
+	// Product
+	balancer.POST("/products", routes.CreateProduct(bat))
+	balancer.GET("/products", routes.GetProduct(bat))
+	balancer.PUT("/products", routes.UpdateProduct(bat))
+	balancer.DELETE("/products", routes.DeleteProduct(bat))
 
+	// Order
+	balancer.POST("/orders", routes.CreateOrder(bat))
+	balancer.GET("/orders", routes.GetOrder(bat))
+	balancer.PUT("/orders", routes.UpdateOrder(bat))
+	balancer.DELETE("/orders", routes.DeleteOrder(bat))
 
 	port := "8000"
 	srv := &http.Server{
-		Addr: ":" + port, 
+		Addr:    ":" + port,
 		Handler: router,
 	}
 
@@ -143,14 +140,14 @@ func runE(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	// Graceful shutdown 
+	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit 
+	<-quit
 
 	log.Println("Shutting down...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -160,31 +157,30 @@ func runE(cmd *cobra.Command, args []string) error {
 	wrk.Stop()
 	bat.Stop()
 
- 	return nil 
+	return nil
 }
 
 func parseAddrs(addrs []string) error {
 	for _, addr := range addrs {
- 		parts := strings.Split(addr, ":")
- 		if len(parts) != 2 {
- 			return fmt.Errorf("invalid address format %s. Expected host:port", addr)
- 		}
+		parts := strings.Split(addr, ":")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid address format %s. Expected host:port", addr)
+		}
 
- 		host := parts[0]
- 		port, err := strconv.Atoi(parts[1])
- 		if err != nil {
- 			return err 
- 		}
+		host := parts[0]
+		port, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return err
+		}
 
- 		if port < 1 || port > 65535 {
- 			return fmt.Errorf("port out of range %s", addr)
- 		}
- 		regis.Add(host, port)
+		if port < 1 || port > 65535 {
+			return fmt.Errorf("port out of range %s", addr)
+		}
+		regis.Add(host, port)
 	}
 
 	return nil
 }
-
 
 func init() {
 	// []str
@@ -195,12 +191,12 @@ func init() {
 	rootCmd.Flags().StringVarP(&loadStrat, "load", "l", "", "Load strategy: M\nPR\nPO\nPRO")
 	rootCmd.Flags().StringVarP(&sel, "selector", "s", "", "Selector: RR\n")
 
-	// Int 
+	// Int
 	rootCmd.Flags().IntVarP(&batSize, "batchsize", "b", 100, "Batch Size")
 	rootCmd.Flags().IntVarP(&batTimeout, "batchtimeout", "t", 2, "Batch Timeout")
 	rootCmd.Flags().IntVarP(&numWorkers, "workers", "w", 4, "Worker size")
 
-	// Required 
+	// Required
 	err := rootCmd.MarkFlagRequired("address")
 	if err != nil {
 		log.Fatal(err)
@@ -224,4 +220,3 @@ func main() {
 		fmt.Println(err)
 	}
 }
-
