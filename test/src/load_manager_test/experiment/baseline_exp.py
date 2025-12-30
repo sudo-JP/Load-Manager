@@ -21,7 +21,7 @@ class BaselineExperiment(BaseExperience):
 
             start_time = time.perf_counter()
             try: 
-                requests.post(f"{self.backend_url}/balancer/{self.userRoute}",
+                requests.post(f"http://localhost:8000/balancer/user",
                                      json=user_data, 
                                      timeout=5)
                 end_time = time.perf_counter()
