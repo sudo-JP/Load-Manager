@@ -110,22 +110,22 @@ func runE(cmd *cobra.Command, args []string) error {
 	balancer := router.Group("balancer")
 
 	// Users
-	balancer.POST("/users", routes.CreateUser(bat))
+	balancer.POST("/user", routes.CreateUser(bat))
 	balancer.GET("/users", routes.GetUser(bat))
-	balancer.PUT("/users", routes.UpdateUser(bat))
-	balancer.DELETE("/users", routes.DeleteUser(bat))
+	balancer.PUT("/user", routes.UpdateUser(bat))
+	balancer.DELETE("/user", routes.DeleteUser(bat))
 
 	// Product
-	balancer.POST("/products", routes.CreateProduct(bat))
+	balancer.POST("/product", routes.CreateProduct(bat))
 	balancer.GET("/products", routes.GetProduct(bat))
-	balancer.PUT("/products", routes.UpdateProduct(bat))
-	balancer.DELETE("/products", routes.DeleteProduct(bat))
+	balancer.PUT("/product", routes.UpdateProduct(bat))
+	balancer.DELETE("/product", routes.DeleteProduct(bat))
 
 	// Order
-	balancer.POST("/orders", routes.CreateOrder(bat))
+	balancer.POST("/order", routes.CreateOrder(bat))
 	balancer.GET("/orders", routes.GetOrder(bat))
-	balancer.PUT("/orders", routes.UpdateOrder(bat))
-	balancer.DELETE("/orders", routes.DeleteOrder(bat))
+	balancer.PUT("/order", routes.UpdateOrder(bat))
+	balancer.DELETE("/order", routes.DeleteOrder(bat))
 
 	port := "8000"
 	srv := &http.Server{
