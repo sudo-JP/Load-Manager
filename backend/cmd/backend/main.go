@@ -27,6 +27,9 @@ import (
 
 // host,port,error
 func parseCLI(args []string) (string, string, error) {
+	if len(args) < 5 {
+		return "", "", fmt.Errorf("not enough argument, missing --port and --host")
+	}
 	host := ""
 	port := ""
 

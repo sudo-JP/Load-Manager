@@ -1,18 +1,13 @@
 from typing import override
 import time 
 import requests 
-#from .exp import BaseExperience
+from .exp import BaseExperience
 
-class BaselineExperiment(): 
+class BaselineExperiment(BaseExperience): 
     def __init__(self, n: int): 
-        self.results = {}
-        self.num_req = n
-        self.backend_url = "http://localhost:9000"
-        self.latencies = []
-        self.userRoute = "user"
-        self.productRoute = "product"
-        self.orderRoute = "order"
+        super().__init__(n)
 
+    @override
     def run(self):
         print(f"Running {self.num_req} requests to backend...")
 
@@ -26,15 +21,12 @@ class BaselineExperiment():
 
             start_time = time.perf_counter()
             try: 
-                requests.post(f"{self.backend_url}/single/{self.userRoute}",
+                requests.post(f"{self.backend_url}/balancer/{self.userRoute}",
                                      json=user_data, 
                                      timeout=5)
                 end_time = time.perf_counter()
                 elapsed = (end_time - start_time) * 1000
                 self.latencies.append(elapsed)
-
-                if i % 100 == 0: 
-                    print(f"Completed {i}/{self.num_req}")
             except Exception as e: 
                 print(f"Request {i} failed {e}")
 
@@ -62,7 +54,7 @@ class BaselineExperiment():
         print(f"Max: {max(sorted_lat):.2f}ms")
 
 if __name__ == '__main__':
-    exp = BaselineExperiment(100)
+    exp = BaselineExperiment(1000)
     exp.run()
 
 

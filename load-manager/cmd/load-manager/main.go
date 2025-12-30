@@ -37,11 +37,6 @@ var (
 
 	// Workers 
 	numWorkers	int 
-
-	// MLFQ stuff 
-	levels 		[]string // priority:algorithm:quantum 	
-	numLevels   int
-	promotion   int 
 )
 
 // Global var 
@@ -91,19 +86,6 @@ func preRunE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid selector %s. Must be: RR", sel)
 	}
 
-	if loadStrat == "M" {
-		if len(levels) == 0 {
-			return fmt.Errorf("MLFQ Load strategy requires at least one --v/--level flag")
-		}
-
-		for _, lvl := range levels {
-			// MLFQ Parsing quant, priority logic here
-			parts := strings.Split(lvl, ":")
-			if len(parts) != 3 {
-                return fmt.Errorf("invalid level format %s, expected priority:algorithm:quantum", lvl)
-			}
-		}
-	}
 
 	return nil 
 }
@@ -127,24 +109,25 @@ func runE(cmd *cobra.Command, args []string) error {
 
 	// Router 
 	router := gin.Default()
+	balancer := router.Group("balancer")
 	
 	// Users 
-	router.POST("/users", routes.CreateUser(bat))
-	router.GET("/users", routes.GetUser(bat))
-	router.PUT("/users", routes.UpdateUser(bat))
-	router.DELETE("/users", routes.DeleteUser(bat))
+	balancer.POST("/user", routes.CreateUser(bat))
+	balancer.GET("/user", routes.GetUser(bat))
+	balancer.PUT("/user", routes.UpdateUser(bat))
+	balancer.DELETE("/user", routes.DeleteUser(bat))
 
 	// Product 
-	router.POST("/products", routes.CreateProduct(bat))
-	router.GET("/products", routes.GetProduct(bat))
-	router.PUT("/products", routes.UpdateProduct(bat))
-	router.DELETE("/products", routes.DeleteProduct(bat))
+	balancer.POST("/product", routes.CreateProduct(bat))
+	balancer.GET("/product", routes.GetProduct(bat))
+	balancer.PUT("/product", routes.UpdateProduct(bat))
+	balancer.DELETE("/product", routes.DeleteProduct(bat))
 
 	// Order 
-	router.POST("/orders", routes.CreateOrder(bat))
-	router.GET("/orders", routes.GetOrder(bat))
-	router.PUT("/orders", routes.UpdateOrder(bat))
-	router.DELETE("/orders", routes.DeleteOrder(bat))
+	balancer.POST("/order", routes.CreateOrder(bat))
+	balancer.GET("/order", routes.GetOrder(bat))
+	balancer.PUT("/order", routes.UpdateOrder(bat))
+	balancer.DELETE("/order", routes.DeleteOrder(bat))
 
 
 	port := "8000"
@@ -206,7 +189,6 @@ func parseAddrs(addrs []string) error {
 func init() {
 	// []str
 	rootCmd.Flags().StringSliceVarP(&addresses, "address", "a", []string{}, "Server addresses")
-	rootCmd.Flags().StringSliceVarP(&levels, "level", "v", []string{}, "MLFQ Level with highest order at 0")
 
 	// Str
 	rootCmd.Flags().StringVarP(&queueType, "queue", "q", "", "Queue algorithms: FCFS\n")
@@ -214,11 +196,9 @@ func init() {
 	rootCmd.Flags().StringVarP(&sel, "selector", "s", "", "Selector: RR\n")
 
 	// Int 
-	rootCmd.Flags().IntVarP(&promotion, "promotion", "p", 0, "MLFQ Level with highest order at 0")
-	rootCmd.Flags().IntVarP(&batSize, "batchsize", "b", 0, "Batch Size")
-	rootCmd.Flags().IntVarP(&batTimeout, "batchtimeout", "t", 0, "Batch Timeout")
-	rootCmd.Flags().IntVarP(&batSize, "batchsize", "b", 0, "Batch Size")
-	rootCmd.Flags().IntVarP(&numWorkers, "workers", "w", 0, "Worker size")
+	rootCmd.Flags().IntVarP(&batSize, "batchsize", "b", 100, "Batch Size")
+	rootCmd.Flags().IntVarP(&batTimeout, "batchtimeout", "t", 2, "Batch Timeout")
+	rootCmd.Flags().IntVarP(&numWorkers, "workers", "w", 4, "Worker size")
 
 	// Required 
 	err := rootCmd.MarkFlagRequired("address")

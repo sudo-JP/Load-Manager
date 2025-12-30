@@ -5,7 +5,7 @@ class BaseExperience(ABC):
     def __init__(self, n: int):
         self.results = {}
         self.num_req = n
-        self.backend_url = "https://localhost:9000"
+        self.backend_url = "http://localhost:8000"
         self.latencies = []
         self.userRoute = "user"
         self.productRoute = "product"
