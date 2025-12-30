@@ -10,7 +10,7 @@ import (
 const MIN_CAPACITY = 128 
 
 type FCFS struct {
-	jobs 		[]queue.Job
+	jobs 		[]*queue.Job
 	head 		int 
 	tail 		int 
 	capacity 	int 
@@ -18,7 +18,7 @@ type FCFS struct {
 	mutex 		sync.Mutex
 }
 
-func (q *FCFS) resizeQueue(oldCap int, tempArr []queue.Job) {
+func (q *FCFS) resizeQueue(oldCap int, tempArr []*queue.Job) {
 	idx := 0 
 	for i := q.head; i != q.tail; i = (i + 1) % oldCap {
 		tempArr[idx] = q.jobs[i]
@@ -33,7 +33,7 @@ func (q *FCFS) doubleQueue() {
 	// Double array 
 	oldCap := q.capacity
 	q.capacity <<= 1
-	tempArr := make([]queue.Job, q.capacity)
+	tempArr := make([]*queue.Job, q.capacity)
 	q.resizeQueue(oldCap, tempArr)
 }
 
@@ -57,7 +57,7 @@ func (q *FCFS) push(job *queue.Job) error {
 		q.doubleQueue()
 	}
 	q.size++ 
-	q.jobs[q.tail] = *job
+	q.jobs[q.tail] = job
 	q.tail = (q.tail + 1) % q.capacity
 
 	return nil 
@@ -66,7 +66,7 @@ func (q *FCFS) push(job *queue.Job) error {
 func (q *FCFS) halfQueue() {
 	oldCap := q.capacity
 	q.capacity >>= 1
-	tempArr := make([]queue.Job, q.capacity)
+	tempArr := make([]*queue.Job, q.capacity)
 	q.resizeQueue(oldCap, tempArr)
 }
 
@@ -88,13 +88,14 @@ func (q *FCFS) pop() (*queue.Job, error) {
 		return nil, errors.New("pop empty on FCFS queue")
 	}
 	job := q.jobs[q.head]
+	q.jobs[q.head] = nil 
 	q.head = (q.head + 1) % q.capacity
 	q.size--
 	if q.size <= q.capacity >> 2 && q.capacity > MIN_CAPACITY {
 		q.halfQueue()
 	}
 
-	return &job, nil
+	return job, nil
 }
 
 func (q *FCFS) Len() int {
@@ -106,7 +107,7 @@ func (q *FCFS) IsEmpty() bool {
 
 func NewFCFSQueue() queue.Queue {
 	return &FCFS{
-		jobs: make([]queue.Job, MIN_CAPACITY),
+		jobs: make([]*queue.Job, MIN_CAPACITY),
 		head: 0,
 		tail: 0, 
 		size: 0, 
