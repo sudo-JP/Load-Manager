@@ -2,9 +2,8 @@ from abc import ABC, abstractmethod
 
 class BaseExperience(ABC): 
 
-    def __init__(self, n: int):
+    def __init__(self):
         self.results = {}
-        self.num_req = n
         self.backend_url = "http://localhost:9000"
         self.latencies = []
         self.userRoute = "user"
@@ -12,7 +11,7 @@ class BaseExperience(ABC):
         self.orderRoute = "order"
 
     @abstractmethod
-    def run(self): 
+    def run(self, num_req: int) -> dict:
         "Execute experiment"
         pass
 
