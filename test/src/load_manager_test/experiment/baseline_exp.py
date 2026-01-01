@@ -16,7 +16,7 @@ class BaselineExperiment(BaseExperience):
             user_data = {
                 "name": f"Test User {i}",
                 "email": f"user{i}@example.com", 
-                "password": f"user{i}",
+                "password": f"user{i}somethingsomething",
             }
 
             start_time = time.perf_counter()

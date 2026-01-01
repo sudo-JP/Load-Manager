@@ -1,6 +1,9 @@
 import subprocess
+import psycopg2
 from dataclasses import dataclass
 from pathlib import Path
+
+from .env import Env
 
 """
 Set up root dir, travel .. 5 times
@@ -42,3 +45,13 @@ def start_process(n: int, load_args: list[str], backend_args: list[str]) -> PIDs
         pids.load_manager = start_load_manager(load_args)
     return pids
 
+def reset_db():
+    environment = Env()
+    conn = psycopg2.connect(environment.get_db_env())
+    cursor = conn.cursor()
+    cursor.execute("TRUNCATE users, products, orders RESETART IDENTITY CASCADE;")
+    conn.commit()
+    print("Database reset!")
+
+def config(): 
+    pass
