@@ -3,8 +3,6 @@ Base Line Experiment is used to test on a single backend directly
 """
 
 from typing import override
-import time 
-import requests 
 from .exp import BaseExperience
 
 class BaselineExperiment(BaseExperience): 

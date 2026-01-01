@@ -2,13 +2,10 @@
 Purpose: Which strategy is the best? 
 """
 
-
 from typing import override
-import time 
-import requests 
 from .exp import BaseExperience
 
-class NumberNodesExperiment(BaseExperience): 
+class StrategyExperiment(BaseExperience): 
     def __init__(self): 
         super().__init__()
 
@@ -22,7 +19,7 @@ class NumberNodesExperiment(BaseExperience):
         # Strategy
         for strat in ['M', 'PR', 'PO', 'PRO']:
 
-            # TODO: Call config set up backend nodes 
+            # TODO: Call config set up 
             
             result = self._run_exp(num_req)
 

@@ -1,32 +1,32 @@
 """
-Purpose: Does adding backends improve performance? 
+Purpose: Which queue algorithm is the best? 
 """
 
 from typing import override
 from .exp import BaseExperience
 
-class NumberNodesExperiment(BaseExperience): 
+class AlgorithmExperiment(BaseExperience): 
     def __init__(self): 
         super().__init__()
 
     @override
     def run(self, num_req: int) -> dict:
         exper = {
-            "experiment": "Scaling",
+            "experiment": "Algorithm",
             "results": []
         }
 
-        # Number of backend nodes
-        for n in [2, 4, 8, 16]:
+        # Algorithm
+        for algo in ['FCFS', 'Random']:
 
             # TODO: Call config set up 
             
             result = self._run_exp(num_req)
 
             exper["results"].append({
-                'nodes': n, 
-                'algorithm': 'FCFS',
-                'selector': 'RR', 
+                'nodes': 4, 
+                'algorithm': algo,
+                'selector': 'RR',
                 'strategy': 'M',
                 'throughput': result['throughput'],
                 'avg_latency': result['avg_latency'],

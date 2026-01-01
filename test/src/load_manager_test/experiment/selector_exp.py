@@ -1,32 +1,32 @@
 """
-Purpose: Does adding backends improve performance? 
+Purpose: Which selector is the best? 
 """
 
 from typing import override
 from .exp import BaseExperience
 
-class NumberNodesExperiment(BaseExperience): 
+class SelectorExperiment(BaseExperience): 
     def __init__(self): 
         super().__init__()
 
     @override
     def run(self, num_req: int) -> dict:
         exper = {
-            "experiment": "Scaling",
+            "experiment": "Selector",
             "results": []
         }
 
-        # Number of backend nodes
-        for n in [2, 4, 8, 16]:
+        # Selector
+        for selector in ['RR', 'Random']:
 
             # TODO: Call config set up 
             
             result = self._run_exp(num_req)
 
             exper["results"].append({
-                'nodes': n, 
+                'nodes': 4, 
                 'algorithm': 'FCFS',
-                'selector': 'RR', 
+                'selector': selector, 
                 'strategy': 'M',
                 'throughput': result['throughput'],
                 'avg_latency': result['avg_latency'],
