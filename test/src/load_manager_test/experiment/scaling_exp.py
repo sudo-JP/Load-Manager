@@ -4,6 +4,7 @@ Purpose: Does adding backends improve performance?
 
 from typing import override
 from .exp import BaseExperience
+from ..config import setup, teardown
 
 class NumberNodesExperiment(BaseExperience): 
     def __init__(self): 
@@ -20,6 +21,7 @@ class NumberNodesExperiment(BaseExperience):
         for n in [2, 4, 8, 16]:
 
             # TODO: Call config set up 
+            pids = setup.start_process(n, [], [])
             
             result = self._run_exp(num_req)
 
@@ -35,6 +37,8 @@ class NumberNodesExperiment(BaseExperience):
                 'p99': result['p99'], 
                 'total_time': result['total_time']
             })
+
+            teardown.teardown(pids)
         
         return exper
         

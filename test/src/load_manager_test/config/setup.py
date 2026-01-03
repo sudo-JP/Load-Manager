@@ -45,6 +45,7 @@ def start_process(n: int, load_args: list[str], backend_args: list[str]) -> PIDs
         pids.load_manager = start_load_manager(load_args)
     return pids
 
+
 def reset_db():
     environment = Env()
     conn = psycopg2.connect(environment.get_db_env())
@@ -55,3 +56,9 @@ def reset_db():
 
 def config(): 
     pass
+
+def generate_address(n: int) -> list[str]: 
+    return [f'localhost:{str(i + 50000)}' for i in range(n)]
+
+def default_arg() -> list[str]:
+    return ['go', 'run', 'main.go']

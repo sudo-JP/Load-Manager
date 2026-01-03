@@ -4,6 +4,7 @@ Purpose: Which selector is the best?
 
 from typing import override
 from .exp import BaseExperience
+from ..config import setup
 
 class SelectorExperiment(BaseExperience): 
     def __init__(self): 
@@ -17,14 +18,23 @@ class SelectorExperiment(BaseExperience):
         }
 
         # Selector
+        nodes = 4
         for selector in ['RR', 'Random']:
 
             # TODO: Call config set up 
+            addrs = setup.generate_address(nodes)
+
+            # Fix
+            addr_args = list(map(lambda addr: f'-a {addr}', addrs))
+            args = setup.default_arg()
+            args.extend(addr_args)
+            args.extend(['-q', 'fcfs', '-s', selector, '-l', 'M'])
+
             
             result = self._run_exp(num_req)
 
             exper["results"].append({
-                'nodes': 4, 
+                'nodes': nodes, 
                 'algorithm': 'FCFS',
                 'selector': selector, 
                 'strategy': 'M',
