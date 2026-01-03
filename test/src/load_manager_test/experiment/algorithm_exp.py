@@ -4,6 +4,7 @@ Purpose: Which queue algorithm is the best?
 
 from typing import override
 from .exp import BaseExperience
+from ..config import setup, teardown
 
 class AlgorithmExperiment(BaseExperience): 
     def __init__(self): 
@@ -17,15 +18,28 @@ class AlgorithmExperiment(BaseExperience):
         }
 
         # Algorithm
-        for algo in ['FCFS', 'Random']:
+        nodes = 4
+        for algo in [setup.QueueAlgorithm.FCFS]:
+            args = setup.ArgsBuilder(n=nodes)
 
-            # TODO: Call config set up 
-            
+            backends = args.build_backend_addr().collect_backend()
+            load = ( 
+                args
+                .build_load_addresses()
+                .build_load_queue(algo)
+                .build_load_selector(setup.Selector.RR)
+                .build_load_strategy(setup.Strategy.MIXED)
+                .collect_load()
+            )
+
+            # Execute experiment and gather result
+            pids = setup.start_experiment(load_args=load, backend_args=backends)
             result = self._run_exp(num_req)
+            teardown.kill_experiment(pids)
 
             exper["results"].append({
-                'nodes': 4, 
-                'algorithm': algo,
+                'nodes': nodes, 
+                'algorithm': algo.name,
                 'selector': 'RR',
                 'strategy': 'M',
                 'throughput': result['throughput'],

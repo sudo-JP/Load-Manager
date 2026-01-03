@@ -4,7 +4,7 @@ Purpose: Which selector is the best?
 
 from typing import override
 from .exp import BaseExperience
-from ..config import setup
+from ..config import setup, teardown
 
 class SelectorExperiment(BaseExperience): 
     def __init__(self): 
@@ -19,19 +19,23 @@ class SelectorExperiment(BaseExperience):
 
         # Selector
         nodes = 4
-        for selector in ['RR', 'Random']:
+        for selector in [setup.Selector.RR, setup.Selector.RANDOM]:
+            args = setup.ArgsBuilder(n=nodes)
 
-            # TODO: Call config set up 
-            addrs = setup.generate_address(nodes)
+            backends = args.build_backend_addr().collect_backend()
+            load = ( 
+                args
+                .build_load_addresses()
+                .build_load_queue(setup.QueueAlgorithm.FCFS)
+                .build_load_selector(selector)
+                .build_load_strategy(setup.Strategy.MIXED)
+                .collect_load()
+            )
 
-            # Fix
-            addr_args = list(map(lambda addr: f'-a {addr}', addrs))
-            args = setup.default_arg()
-            args.extend(addr_args)
-            args.extend(['-q', 'fcfs', '-s', selector, '-l', 'M'])
-
-            
+            # Execute experiment and gather result
+            pids = setup.start_experiment(load_args=load, backend_args=backends)
             result = self._run_exp(num_req)
+            teardown.kill_experiment(pids)
 
             exper["results"].append({
                 'nodes': nodes, 

@@ -4,6 +4,7 @@ Purpose: Which strategy is the best?
 
 from typing import override
 from .exp import BaseExperience
+from ..config import setup, teardown
 
 class StrategyExperiment(BaseExperience): 
     def __init__(self): 
@@ -17,14 +18,27 @@ class StrategyExperiment(BaseExperience):
         }
 
         # Strategy
-        for strat in ['M', 'PR', 'PO', 'PRO']:
+        nodes = 4
+        for strat in [setup.Strategy.MIXED, setup.Strategy.PO, setup.Strategy.PR, setup.Strategy.PRO]:
+            args = setup.ArgsBuilder(n=nodes)
 
-            # TODO: Call config set up 
-            
+            backends = args.build_backend_addr().collect_backend()
+            load = ( 
+                args
+                .build_load_addresses()
+                .build_load_queue(setup.QueueAlgorithm.FCFS)
+                .build_load_selector(setup.Selector.RR)
+                .build_load_strategy(strat)
+                .collect_load()
+            )
+
+            # Execute experiment and gather result
+            pids = setup.start_experiment(load_args=load, backend_args=backends)
             result = self._run_exp(num_req)
+            teardown.kill_experiment(pids)
 
             exper["results"].append({
-                'nodes': 4, 
+                'nodes': nodes, 
                 'algorithm': 'FCFS',
                 'selector': 'RR', 
                 'strategy': strat,

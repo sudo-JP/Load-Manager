@@ -19,11 +19,22 @@ class NumberNodesExperiment(BaseExperience):
 
         # Number of backend nodes
         for n in [2, 4, 8, 16]:
+            args = setup.ArgsBuilder(n=n)
 
-            # TODO: Call config set up 
-            pids = setup.start_process(n, [], [])
-            
+            backends = args.build_backend_addr().collect_backend()
+            load = ( 
+                args
+                .build_load_addresses()
+                .build_load_queue(setup.QueueAlgorithm.FCFS)
+                .build_load_selector(setup.Selector.RR)
+                .build_load_strategy(setup.Strategy.MIXED)
+                .collect_load()
+            )
+
+            # Execute experiment and gather result
+            pids = setup.start_experiment(load_args=load, backend_args=backends)
             result = self._run_exp(num_req)
+            teardown.kill_experiment(pids)
 
             exper["results"].append({
                 'nodes': n, 
@@ -37,8 +48,6 @@ class NumberNodesExperiment(BaseExperience):
                 'p99': result['p99'], 
                 'total_time': result['total_time']
             })
-
-            teardown.teardown(pids)
         
         return exper
         
