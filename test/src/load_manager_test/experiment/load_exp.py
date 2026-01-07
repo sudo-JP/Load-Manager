@@ -3,7 +3,7 @@ Purpose: How does system handle increasing load?
 """
 
 from typing import override
-from .exp import BaseExperience
+from load_manager_test.experiment.exp import BaseExperience
 
 class LoadExperiment(BaseExperience): 
     def __init__(self): 

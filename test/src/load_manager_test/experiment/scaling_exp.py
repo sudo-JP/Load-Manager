@@ -3,10 +3,10 @@ Purpose: Does adding backends improve performance?
 """
 
 from typing import override
-from .exp import BaseExperience
-from ..config import setup, teardown
+from load_manager_test.experiment.exp import BaseExperience
+from load_manager_test.config import setup, teardown
 
-class NumberNodesExperiment(BaseExperience): 
+class ScalingExperiment(BaseExperience): 
     def __init__(self): 
         super().__init__()
 
@@ -19,6 +19,7 @@ class NumberNodesExperiment(BaseExperience):
 
         # Number of backend nodes
         for n in [2, 4, 8, 16]:
+            setup.reset_db()
             args = setup.ArgsBuilder(n=n)
 
             backends = args.build_backend_addr().collect_backend()

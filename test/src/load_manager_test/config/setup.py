@@ -3,7 +3,7 @@ import psycopg2
 from dataclasses import dataclass
 from pathlib import Path
 
-from .env import Env
+from load_manager_test.config.env import Env
 from enum import Enum
 from typing import Self
 
@@ -54,7 +54,7 @@ def start_experiment(load_args: list[str], backend_args: list[list[str]]) -> PID
     return pids
 
 
-def reset_db():
+def reset_db() -> None:
     environment = Env()
     conn = psycopg2.connect(environment.get_db_env())
     cursor = conn.cursor()
@@ -65,7 +65,7 @@ def reset_db():
 
 class Args: 
     def __init__(self):
-        self.args = ['go', 'run']
+        self.args = ['go', 'run', 'main.go']
 
 
     def add(self, arg: str): 
@@ -145,12 +145,3 @@ class ArgsBuilder:
 
     def collect_load(self) -> list[str]: 
         return self.load_args.args
-
-def config(): 
-    pass
-
-def generate_address(n: int) -> list[str]: 
-    return [f'localhost:{str(i + 50000)}' for i in range(n)]
-
-def default_arg() -> list[str]:
-    return ['go', 'run', 'main.go']

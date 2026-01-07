@@ -3,8 +3,8 @@ Purpose: Which selector is the best?
 """
 
 from typing import override
-from .exp import BaseExperience
-from ..config import setup, teardown
+from load_manager_test.experiment.exp import BaseExperience
+from load_manager_test.config import setup, teardown
 
 class SelectorExperiment(BaseExperience): 
     def __init__(self): 
@@ -20,6 +20,7 @@ class SelectorExperiment(BaseExperience):
         # Selector
         nodes = 4
         for selector in [setup.Selector.RR, setup.Selector.RANDOM]:
+            setup.reset_db()
             args = setup.ArgsBuilder(n=nodes)
 
             backends = args.build_backend_addr().collect_backend()

@@ -3,8 +3,8 @@ Purpose: Which queue algorithm is the best?
 """
 
 from typing import override
-from .exp import BaseExperience
-from ..config import setup, teardown
+from load_manager_test.experiment.exp import BaseExperience
+from load_manager_test.config import setup, teardown
 
 class AlgorithmExperiment(BaseExperience): 
     def __init__(self): 
@@ -20,6 +20,8 @@ class AlgorithmExperiment(BaseExperience):
         # Algorithm
         nodes = 4
         for algo in [setup.QueueAlgorithm.FCFS]:
+            setup.reset_db()
+            
             args = setup.ArgsBuilder(n=nodes)
 
             backends = args.build_backend_addr().collect_backend()

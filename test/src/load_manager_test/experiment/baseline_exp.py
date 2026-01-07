@@ -3,7 +3,7 @@ Base Line Experiment is used to test on a single backend directly
 """
 
 from typing import override
-from .exp import BaseExperience
+from load_manager_test.experiment.exp import BaseExperience
 
 class BaselineExperiment(BaseExperience): 
     def __init__(self): 
