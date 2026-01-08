@@ -3,27 +3,26 @@ import numpy as np
 
 """
 General plot function
+
 """
-def plot(x_label: str, y_label: str, 
-         category: np.ndarray,
-         xs: np.ndarray, ys: np.ndarray, 
-         exp_name: str):
+def _plot(experiments: str, categories: list,
+         throughputs: np.ndarray, title: str):
 
-    fig, ax = plt.subplots()
-    width = 0.35
+    plt.bar(categories, throughputs)
+    plt.title(title)
+    plt.xlabel(experiments)
+    plt.ylabel('Througput (ms)') # This is what we measuring anyway 
 
-    bar1 = ax.bar(len(xs) - width / 2, xs,  width, yerr=xs,
-                  label=x_label)
-    bar2 = ax.bar(len(ys) + width / 2, ys,  width, yerr=ys)
-    #ax.bar(x )
-
-    plt.plot(xs, ys)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-
-    plt.title(exp_name)
-
-    ax.legend()
-    plt.savefig(exp_name)
+    plt.savefig(title + '.png')
 
 
+def plot(baseline: dict, results: dict, target: str):
+    res_len = len(results['results'])
+    throughputs = np.zeros(1 + res_len)
+    throughputs[0] = np.sum(baseline['result'])
+    categories = ['Base']
+
+    for i in range(res_len):
+        throughputs[i + 1] = np.sum(results['results'][i]['result'])
+        categories.append(results['results'][i][target])
+    _plot(results['experiment'], categories, throughputs, f'Base vs {target.capitalize()}')

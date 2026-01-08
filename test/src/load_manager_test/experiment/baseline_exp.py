@@ -11,22 +11,19 @@ class BaselineExperiment(BaseExperience):
         self.backend_url = "http://localhost:8080/single"
 
     @override
+    def target(self) -> str: 
+        return 'Base'
+
+    @override
     def run(self,num_req: int) -> dict:
         result = self._run_exp(num_req)
 
         return {
             "experiment": "Base", 
-            "results": {
-                'throughput': result['throughput'],
-                'avg_latency': result['avg_latency'],
-                'p50': result['p50'],
-                'p95': result['p95'],
-                'p99': result['p99'], 
-                'total_time': result['total_time']
-            }
+            "result": result
         }
         
-    def print_results(self): 
+    """def print_results(self): 
         if not self.latencies:
             print("No succcessful req")
             return 
@@ -44,7 +41,7 @@ class BaselineExperiment(BaseExperience):
         print(f"P95: {p95:.2f}ms")
         print(f"P99: {p99:.2f}ms")
         print(f"Min: {min(sorted_lat):.2f}ms")
-        print(f"Max: {max(sorted_lat):.2f}ms")
+        print(f"Max: {max(sorted_lat):.2f}ms")"""
 
 if __name__ == '__main__':
     exp = BaselineExperiment()

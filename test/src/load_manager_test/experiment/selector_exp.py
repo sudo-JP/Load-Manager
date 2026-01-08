@@ -11,6 +11,10 @@ class SelectorExperiment(BaseExperience):
         super().__init__()
 
     @override
+    def target(self) -> str: 
+        return 'selector'
+
+    @override
     def run(self, num_req: int) -> dict:
         exper = {
             "experiment": "Selector",
@@ -43,12 +47,7 @@ class SelectorExperiment(BaseExperience):
                 'algorithm': 'FCFS',
                 'selector': selector, 
                 'strategy': 'M',
-                'throughput': result['throughput'],
-                'avg_latency': result['avg_latency'],
-                'p50': result['p50'],
-                'p95': result['p95'],
-                'p99': result['p99'], 
-                'total_time': result['total_time']
+                'result': result
             })
         
         return exper

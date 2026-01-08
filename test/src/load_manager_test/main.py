@@ -1,14 +1,18 @@
 #import plotting.plot as p
-from .config.setup import start_backend
-from .experiment.scaling_exp import ScalingExperiment
+from load_manager_test.experiment import baseline_exp, scaling_exp
+from load_manager_test.plotting import plot
 
-NUM_REQS = 100
-BACKEND_NODES = 4
-
+REQUESTS = 2
 
 if __name__ == '__main__':
-    bl = ScalingExperiment()
-    bl.run(1000)
+    bl = baseline_exp.BaselineExperiment()
+    bl_result = bl.run(REQUESTS)
+
+    scaling = scaling_exp.ScalingExperiment()
+    scaling_results = bl.run(REQUESTS)
+
+    plot.plot(bl_result, scaling_results, scaling.target())
+
 #start_backend(1)
 
     

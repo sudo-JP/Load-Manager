@@ -11,6 +11,10 @@ class StrategyExperiment(BaseExperience):
         super().__init__()
 
     @override
+    def target(self) -> str: 
+        return 'strategy'
+
+    @override
     def run(self, num_req: int) -> dict:
         exper = {
             "experiment": "Strategy",
@@ -43,12 +47,7 @@ class StrategyExperiment(BaseExperience):
                 'algorithm': 'FCFS',
                 'selector': 'RR', 
                 'strategy': strat,
-                'throughput': result['throughput'],
-                'avg_latency': result['avg_latency'],
-                'p50': result['p50'],
-                'p95': result['p95'],
-                'p99': result['p99'], 
-                'total_time': result['total_time']
+                'result': result
             })
         
         return exper

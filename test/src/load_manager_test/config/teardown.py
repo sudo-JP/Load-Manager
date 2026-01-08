@@ -1,4 +1,4 @@
-from .setup import PIDs 
+from load_manager_test.config.setup import PIDs
 import signal
 import os 
 
