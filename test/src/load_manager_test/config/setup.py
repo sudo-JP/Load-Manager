@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from load_manager_test.config.env import Env
+
 from enum import Enum
 from typing import Self
 
