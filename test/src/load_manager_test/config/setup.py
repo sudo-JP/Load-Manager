@@ -3,7 +3,7 @@ import psycopg2
 from dataclasses import dataclass
 from pathlib import Path
 
-from load_manager_test.config.env import Env
+from .env import Env
 
 from enum import Enum
 from typing import Self
@@ -34,15 +34,97 @@ class PIDs:
     backend: list[int]
     load_manager: int
 
-def start_backend(backend_args: list[str]) -> int: 
-    backend_dir = ROOT_DIR / "backend" / "cmd" / "backend" 
-    if not backend_dir.exists() or not backend_dir.is_dir():
-        raise FileNotFoundError(f"Backend directory does not exist: {backend_dir}")
+def start_backend(backend_args: list[str]) -> int:
+    if not backend_args:
+        raise ValueError('backend args must exist')
+    backend_root = ROOT_DIR / "backend"
+    print(f'backend_root: {backend_root}')
+    print(f'backend_args: {backend_args}')
+    if not backend_root.exists() or not backend_root.is_dir():
+        raise FileNotFoundError(f"Backend directory does not exist: {backend_root}")
 
-    return subprocess.Popen(backend_args, cwd=backend_dir).pid
+    proc = subprocess.Popen(backend_args, cwd=str(backend_root), start_new_session=True)
+    pid = proc.pid
+
+    # Parse host/port from args and wait until the backend is accepting TCP connections
+    host = 'localhost'
+    port = None
+    if '--host' in backend_args:
+        try:
+            host = backend_args[backend_args.index('--host') + 1]
+        except Exception:
+            pass
+    if '--port' in backend_args:
+        try:
+            port = int(backend_args[backend_args.index('--port') + 1])
+        except Exception:
+            port = None
+
+    if port is not None:
+        import socket, time
+        timeout = 10
+        interval = 0.2
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                with socket.create_connection((host, port), timeout=1):
+                    break
+            except Exception:
+                time.sleep(interval)
+        else:
+            print(f'Warning: backend not responding on {host}:{port} after {timeout}s')
+
+    return pid
+
 
 def start_load_manager(load_args: list[str]) -> int:
+    if not load_args:
+        return -1
     load_dir = ROOT_DIR / "load-manager" / "cmd" / "load-manager"
+    print(f'load_dir: {load_dir}')
+    print(f'load_args: {load_args}')
+    if not load_dir.exists() or not load_dir.is_dir():
+        raise FileNotFoundError(f"Load directory does not exist: {load_dir}")
+
+    proc = subprocess.Popen(load_args, cwd=load_dir, start_new_session=True)
+    pid = proc.pid
+
+    # Optionally wait for host:port if provided in args
+    host = 'localhost'
+    port = None
+    if '--host' in load_args:
+        try:
+            host = load_args[load_args.index('--host') + 1]
+        except Exception:
+            pass
+    if '--port' in load_args:
+        try:
+            port = int(load_args[load_args.index('--port') + 1])
+        except Exception:
+            port = None
+
+    if port is not None:
+        import socket, time
+        timeout = 10
+        interval = 0.2
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                with socket.create_connection((host, port), timeout=1):
+                    break
+            except Exception:
+                time.sleep(interval)
+        else:
+            print(f'Warning: load manager not responding on {host}:{port} after {timeout}s')
+
+    return pid
+
+def start_load_manager(load_args: list[str]) -> int:
+    if not load_args:
+        return -1
+    load_dir = ROOT_DIR / "load-manager" / "cmd" / "load-manager"
+    print(f'load_dir: {load_dir}')
+    print(f'load_args: {load_args}')
     if not load_dir.exists() or not load_dir.is_dir():
         raise FileNotFoundError(f"Load directory does not exist: {load_dir}")
 
@@ -59,14 +141,20 @@ def reset_db() -> None:
     environment = Env()
     conn = psycopg2.connect(environment.get_db_env())
     cursor = conn.cursor()
-    cursor.execute("TRUNCATE users, products, orders RESETART IDENTITY CASCADE;")
+    cursor.execute("TRUNCATE users, products, orders RESTART IDENTITY CASCADE;")
     conn.commit()
     print("Database reset!")
 
 
 class Args: 
-    def __init__(self):
-        self.args = ['go', 'run', 'main.go']
+    def __init__(self, is_backend=True):
+
+        self.args = ['go', 'run']
+        if is_backend:
+            self.args.append('cmd/backend/main.go')
+        # Assuming this is load
+        else:
+            self.args.append('cmd/load-manager/main.go')
 
 
     def add(self, arg: str): 
@@ -79,7 +167,7 @@ class ArgsBuilder:
     n as the number of nodes, we start our addresses at 50000
     """
     def __init__(self, n=4) -> None: 
-        self.load_args = Args() 
+        self.load_args = Args(is_backend=False) 
         self.backend_args = [Args() for _ in range(n)]
         self.n = n 
 

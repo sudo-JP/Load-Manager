@@ -12,6 +12,5 @@ class Env:
         self._POSTGRES_HOST = os.getenv('POSTGRES_HOST')
 
     def get_db_env(self) -> str: 
-        return f'postgresq://{self._POSTGRES_USER}:{self._POSTGRES_PASSWORD}\
-        @{self._POSTGRES_HOST}:{self._POSTGRES_HOST}/{self._POSTGRES_DB}'
+        return f'postgresql://{self._POSTGRES_USER}:{self._POSTGRES_PASSWORD}@{self._POSTGRES_HOST}:{self._POSTGRES_PORT}/{self._POSTGRES_DB}'
 

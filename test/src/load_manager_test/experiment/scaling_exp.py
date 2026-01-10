@@ -3,8 +3,8 @@ Purpose: Does adding backends improve performance?
 """
 
 from typing import override
-from load_manager_test.experiment.exp import BaseExperience
-from load_manager_test.config import setup, teardown
+from .exp import BaseExperience
+from ..config import setup, teardown
 
 class ScalingExperiment(BaseExperience): 
     def __init__(self): 

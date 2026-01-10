@@ -7,7 +7,7 @@ class BaseExperience(ABC):
 
     def __init__(self):
         self.results = {}
-        self.backend_url = "http://localhost:9000"
+        self.backend_url = "http://localhost:9050"
         self.userRoute = "user"
         self.productRoute = "product"
         self.orderRoute = "order"
@@ -24,30 +24,36 @@ class BaseExperience(ABC):
 
     def _run_exp(self, num_req: int) -> np.ndarray:
         print(f"Running {num_req} requests to backend...")
+        print(f'{self.backend_url}/{self.userRoute}')
 
         latencies = np.empty(num_req)
+        success_count = 0
 
         # Number of requests
-        for i in range(num_req): 
+        for i in range(num_req):
             user_data = {
-                "name": f'Test User {i}', 
-                "email": f'user{i}@example.com', 
+                "name": f'Test User {i}',
+                "email": f'user{i}@example.com',
                 'password': f'user{i}somethingsomething',
             }
-            
+
             start_time = time.perf_counter()
             try:
-                requests.post(f'{self.backend_url}/{self.userRoute}',
+                resp = requests.post(f'{self.backend_url}/{self.userRoute}',
                                 json=user_data,
                                 timeout=5)
 
-                end_time = time.perf_counter()
-                elapsed = (end_time - start_time) * 1000
-                latencies[i] = (elapsed)
-            except Exception as e: 
+                if resp.status_code >= 400:
+                    print(f'Request {i} failed status {resp.status_code}: {resp.text}')
+                else:
+                    end_time = time.perf_counter()
+                    elapsed = (end_time - start_time) * 1000
+                    latencies[i] = (elapsed)
+                    success_count += 1
+            except Exception as e:
                 print(f'Request {i} failed {e}')
 
-        if not latencies.size == 0:
+        if success_count == 0:
             raise ValueError("No succcessful req")
 
         # Calculation

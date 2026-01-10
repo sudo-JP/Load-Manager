@@ -3,8 +3,8 @@ Purpose: Which selector is the best?
 """
 
 from typing import override
-from load_manager_test.experiment.exp import BaseExperience
-from load_manager_test.config import setup, teardown
+from .exp import BaseExperience
+from ..config import setup, teardown
 
 class SelectorExperiment(BaseExperience): 
     def __init__(self): 

@@ -3,12 +3,13 @@ Base Line Experiment is used to test on a single backend directly
 """
 
 from typing import override
-from load_manager_test.experiment.exp import BaseExperience
+from .exp import BaseExperience
+from ..config import setup, teardown
 
 class BaselineExperiment(BaseExperience): 
     def __init__(self): 
         super().__init__()
-        self.backend_url = "http://localhost:8080/single"
+        self.backend_url = "http://localhost:9050/single"
 
     @override
     def target(self) -> str: 
@@ -16,7 +17,12 @@ class BaselineExperiment(BaseExperience):
 
     @override
     def run(self,num_req: int) -> dict:
+        args = setup.ArgsBuilder(n=1)
+        backend = args.build_backend_addr().collect_backend()
+        setup.reset_db()
+        pid = setup.start_experiment(load_args=[], backend_args=backend)
         result = self._run_exp(num_req)
+        teardown.kill_process(pid.backend[0])
 
         return {
             "experiment": "Base", 

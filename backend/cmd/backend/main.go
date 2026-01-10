@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -102,9 +103,15 @@ func main() {
 		}
 	}()
 
+	id, err := strconv.Atoi(port)
+	id = id - 50000
+	if err != nil {
+		log.Fatalf("Failed to serve: %v", err)
+		os.Exit(5)
+	}
 	// HTTP Server (for direct testing and comparison)
-	httpServer := startHTTPServer(userService, productService, orderService)
-	log.Printf("HTTP server listening on :9000")
+	httpServer := startHTTPServer(userService, productService, orderService, id)
+	log.Printf("HTTP server listening on " + strconv.Itoa(9000 + id))
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start HTTP server: %v", err)
@@ -134,6 +141,7 @@ func startHTTPServer(
 	userService service.UserServiceInterface,
 	productService service.ProductServiceInterface,
 	orderService service.OrderServiceInterface,
+	id int, 
 ) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -162,9 +170,10 @@ func startHTTPServer(
 	single.GET("/order", orderHandler.GetOrders)
 	single.PUT("/order", orderHandler.UpdateOrder)
 	single.DELETE("/order", orderHandler.DeleteOrder)
+	
 
 	return &http.Server{
-		Addr:    ":9000",
+		Addr:    ":" + strconv.Itoa(9000 + id),
 		Handler: router,
 	}
 }
