@@ -24,7 +24,6 @@ class AlgorithmExperiment(BaseExperience):
         # Algorithm
         nodes = 4
         for algo in [setup.QueueAlgorithm.FCFS]:
-            setup.reset_db()
             
             args = setup.ArgsBuilder(n=nodes)
 

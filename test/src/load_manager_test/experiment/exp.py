@@ -2,12 +2,13 @@ from abc import ABC, abstractmethod
 import time 
 import requests 
 import numpy as np
+from ..config import setup
 
 class BaseExperience(ABC): 
 
     def __init__(self):
         self.results = {}
-        self.backend_url = "http://localhost:9050"
+        self.backend_url = "http://localhost:8000/balancer"
         self.userRoute = "user"
         self.productRoute = "product"
         self.orderRoute = "order"
@@ -23,6 +24,7 @@ class BaseExperience(ABC):
         pass
 
     def _run_exp(self, num_req: int) -> np.ndarray:
+        setup.reset_db()
         print(f"Running {num_req} requests to backend...")
         print(f'{self.backend_url}/{self.userRoute}')
 

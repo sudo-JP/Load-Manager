@@ -23,7 +23,6 @@ class ScalingExperiment(BaseExperience):
 
         # Number of backend nodes
         for n in [2, 4, 8, 16]:
-            setup.reset_db()
             args = setup.ArgsBuilder(n=n)
 
             backends = args.build_backend_addr().collect_backend()

@@ -19,7 +19,6 @@ class BaselineExperiment(BaseExperience):
     def run(self,num_req: int) -> dict:
         args = setup.ArgsBuilder(n=1)
         backend = args.build_backend_addr().collect_backend()
-        setup.reset_db()
         pid = setup.start_experiment(load_args=[], backend_args=backend)
         result = self._run_exp(num_req)
         teardown.kill_process(pid.backend[0])

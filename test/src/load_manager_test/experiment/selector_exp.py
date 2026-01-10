@@ -24,7 +24,6 @@ class SelectorExperiment(BaseExperience):
         # Selector
         nodes = 4
         for selector in [setup.Selector.RR, setup.Selector.RANDOM]:
-            setup.reset_db()
             args = setup.ArgsBuilder(n=nodes)
 
             backends = args.build_backend_addr().collect_backend()

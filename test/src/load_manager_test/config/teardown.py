@@ -20,10 +20,4 @@ Not my fault the naming convention is like this
 def kill_experiment(pids: PIDs):
     for pid in pids.backend:
         kill_process(pid)
-    try:
-        os.killpg(pids.load_manager, signal.SIGINT)
-    except Exception:
-        try:
-            os.kill(pids.load_manager, signal.SIGINT)
-        except Exception as e:
-            print(f'Failed to kill load_manager {pids.load_manager}: {e}')
+    kill_process(pids.load_manager)

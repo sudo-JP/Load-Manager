@@ -2,6 +2,8 @@ import subprocess
 import psycopg2
 from dataclasses import dataclass
 from pathlib import Path
+import socket
+import time
 
 from .env import Env
 
@@ -61,7 +63,6 @@ def start_backend(backend_args: list[str]) -> int:
             port = None
 
     if port is not None:
-        import socket, time
         timeout = 10
         interval = 0.2
         start = time.time()
@@ -90,45 +91,28 @@ def start_load_manager(load_args: list[str]) -> int:
     pid = proc.pid
 
     # Optionally wait for host:port if provided in args
-    host = 'localhost'
-    port = None
-    if '--host' in load_args:
-        try:
-            host = load_args[load_args.index('--host') + 1]
-        except Exception:
-            pass
-    if '--port' in load_args:
-        try:
-            port = int(load_args[load_args.index('--port') + 1])
-        except Exception:
-            port = None
-
-    if port is not None:
-        import socket, time
-        timeout = 10
-        interval = 0.2
-        start = time.time()
-        while time.time() - start < timeout:
+    for i in range(len(load_args)): 
+        if load_args[i] == '-a': 
             try:
-                with socket.create_connection((host, port), timeout=1):
-                    break
+                addr = load_args[i + 1]
+                parts = addr.split(':')
+                host, port = parts[0], int(parts[1])
+                timeout = 10
+                interval = 0.2
+                start = time.time()
+                while time.time() - start < timeout:
+                    try:
+                        with socket.create_connection((host, port), timeout=1):
+                            break
+                    except Exception:
+                        time.sleep(interval)
+                else:
+                    print(f'Warning: load manager not responding on {host}:{port} after {timeout}s')
             except Exception:
-                time.sleep(interval)
-        else:
-            print(f'Warning: load manager not responding on {host}:{port} after {timeout}s')
+                continue
+
 
     return pid
-
-def start_load_manager(load_args: list[str]) -> int:
-    if not load_args:
-        return -1
-    load_dir = ROOT_DIR / "load-manager" / "cmd" / "load-manager"
-    print(f'load_dir: {load_dir}')
-    print(f'load_args: {load_args}')
-    if not load_dir.exists() or not load_dir.is_dir():
-        raise FileNotFoundError(f"Load directory does not exist: {load_dir}")
-
-    return subprocess.Popen(load_args, cwd=load_dir).pid
 
 def start_experiment(load_args: list[str], backend_args: list[list[str]]) -> PIDs: 
     pids = PIDs([], -1)
@@ -154,7 +138,7 @@ class Args:
             self.args.append('cmd/backend/main.go')
         # Assuming this is load
         else:
-            self.args.append('cmd/load-manager/main.go')
+            self.args.append('main.go')
 
 
     def add(self, arg: str): 
@@ -190,7 +174,7 @@ class ArgsBuilder:
     Build load manager args
     """
     def build_load_queue(self, algorithm: QueueAlgorithm) -> Self: 
-        self.load_args.add('-f')
+        self.load_args.add('-q')
         match algorithm:
             case QueueAlgorithm.FCFS: 
                 self.load_args.add('FCFS')

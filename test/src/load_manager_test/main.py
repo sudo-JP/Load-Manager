@@ -2,8 +2,9 @@
 from .experiment import baseline_exp, scaling_exp, selector_exp, strategy_exp, algorithm_exp, load_exp
 from .plotting import plot
 from .config import env, setup, teardown
+import numpy as np
 
-REQUESTS = 100
+REQUESTS = 2
 
 def main():
     """
@@ -12,14 +13,11 @@ def main():
     # Base line
     bl = baseline_exp.BaselineExperiment()
     bl_result = bl.run(REQUESTS)
-    print(bl_result)
-    #pid = setup.start_backend(['go', 'run', 'cmd/backend/main.go', '--host', 'localhost', '--port', '50000'])
-    #print(pid)
-    #teardown.kill_process(pid)
+    print(np.mean(bl_result['result']))
 
     # Scaling
-    """scaling = scaling_exp.ScalingExperiment()
-    scaling_results = bl.run(REQUESTS)
+    scaling = scaling_exp.ScalingExperiment()
+    scaling_results = scaling.run(REQUESTS)
 
     # Selector
     selector = selector_exp.SelectorExperiment()
@@ -31,16 +29,16 @@ def main():
 
     # Strategy
     strat = strategy_exp.StrategyExperiment()
-    strat_results = strat.run(REQUESTS)"""
+    strat_results = strat.run(REQUESTS)
 
 
     """
     GRAPH EXPERIMENTS
     """
-    """plot.plot(bl_result, scaling_results, scaling.target())
+    plot.plot(bl_result, scaling_results, scaling.target())
     plot.plot(bl_result, selector_results, selector.target())
     plot.plot(bl_result, algo_results, algorithm.target())
-    plot.plot(bl_result, strat_results, strat.target())"""
+    plot.plot(bl_result, strat_results, strat.target())
 
 
 if __name__ == '__main__':

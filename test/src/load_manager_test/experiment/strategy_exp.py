@@ -24,7 +24,6 @@ class StrategyExperiment(BaseExperience):
         # Strategy
         nodes = 4
         for strat in [setup.Strategy.MIXED, setup.Strategy.PO, setup.Strategy.PR, setup.Strategy.PRO]:
-            setup.reset_db()
             args = setup.ArgsBuilder(n=nodes)
 
             backends = args.build_backend_addr().collect_backend()
