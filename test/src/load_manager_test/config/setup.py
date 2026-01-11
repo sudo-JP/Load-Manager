@@ -40,8 +40,6 @@ def start_backend(backend_args: list[str]) -> int:
     if not backend_args:
         raise ValueError('backend args must exist')
     backend_root = ROOT_DIR / "backend"
-    print(f'backend_root: {backend_root}')
-    print(f'backend_args: {backend_args}')
     if not backend_root.exists() or not backend_root.is_dir():
         raise FileNotFoundError(f"Backend directory does not exist: {backend_root}")
 
@@ -82,8 +80,6 @@ def start_load_manager(load_args: list[str]) -> int:
     if not load_args:
         return -1
     load_dir = ROOT_DIR / "load-manager" / "cmd" / "load-manager"
-    print(f'load_dir: {load_dir}')
-    print(f'load_args: {load_args}')
     if not load_dir.exists() or not load_dir.is_dir():
         raise FileNotFoundError(f"Load directory does not exist: {load_dir}")
 

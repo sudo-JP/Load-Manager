@@ -1,10 +1,9 @@
 #import plotting.plot as p
 from .experiment import baseline_exp, scaling_exp, selector_exp, strategy_exp, algorithm_exp, load_exp
 from .plotting import plot
-from .config import env, setup, teardown
 import numpy as np
 
-REQUESTS = 2
+REQUESTS = 10000
 
 def main():
     """
