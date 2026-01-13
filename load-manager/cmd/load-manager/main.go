@@ -81,8 +81,10 @@ func preRunE(cmd *cobra.Command, args []string) error {
 	switch sel {
 	case "RR":
 		s = selector.NewRR()
+	case "RAND":
+		s = selector.NewRand()
 	default:
-		return fmt.Errorf("invalid selector %s. Must be: RR", sel)
+		return fmt.Errorf("invalid selector %s. Must be: RR, RAND", sel)
 	}
 
 	return nil
@@ -187,9 +189,9 @@ func init() {
 	rootCmd.Flags().StringSliceVarP(&addresses, "address", "a", []string{}, "Server addresses")
 
 	// Str
-	rootCmd.Flags().StringVarP(&queueType, "queue", "q", "", "Queue algorithms: FCFS\n")
-	rootCmd.Flags().StringVarP(&loadStrat, "load", "l", "", "Load strategy: M\nPR\nPO\nPRO")
-	rootCmd.Flags().StringVarP(&sel, "selector", "s", "", "Selector: RR\n")
+	rootCmd.Flags().StringVarP(&queueType, "queue", "q", "FCFS", "Queue algorithms: FCFS\n")
+	rootCmd.Flags().StringVarP(&loadStrat, "load", "l", "M", "Load strategy: M\nPR\nPO\nPRO")
+	rootCmd.Flags().StringVarP(&sel, "selector", "s", "RR", "Selector: RR\nRAND")
 
 	// Int
 	rootCmd.Flags().IntVarP(&batSize, "batchsize", "b", 100, "Batch Size")
