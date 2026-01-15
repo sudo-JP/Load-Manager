@@ -73,16 +73,57 @@ func (s *SJF) Pushs(jobs []*queue.Job) []error {
 	return errs
 }
 
-func (s *SJF) Pops() ([]*queue.Job, []error) {
+func (s *SJF) pop() (*queue.Job, error) {
+	if s.Len() == 0 {
+		return nil, errors.New("empty queue")
+	}
+
+	i := 0 
+	job := s.jobs[i].job
 	
+	for i < s.Len() {
+		left := s.left_child(i)
+		right := s.right_child(i)
+
+		curr_p := s.jobs[i]
+		left_p := s.jobs[left]
+		right_p := s.jobs[right]
+
+		if curr_p.priority < left_p.priority && curr_p.priority < right_p.priority {
+			break
+		} else if left_p.priority < right_p.priority {
+			s.jobs[i] = s.jobs[left]
+			s.jobs[left] = curr_p
+		} else {
+			s.jobs[i] = s.jobs[right]
+			s.jobs[right] = curr_p
+		}
+		
+	}
+	return job, nil
+}
+
+func (s *SJF) Pops() ([]*queue.Job, []error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	n := min(MIN_CAPACITY, s.Len())
+	jobs := make([]*queue.Job, n)
+	errs := make([]error, n)
+
+	for i := range(n) {
+		jobs[i], errs[i] = s.pop()
+	}
+
+	return jobs, errs
 }
 
 func (s *SJF) Len() int {
-
+	return len(s.jobs)
 }
 
 func (s *SJF) IsEmpty() bool {
-
+	return len(s.jobs) == 0
 }
 
 
