@@ -2,7 +2,7 @@ package algorithms
 
 import (
 	"sync"
-	"math/rand/v2"
+	//"math/rand/v2"
 	"github.com/sudo-JP/Load-Manager/load-manager/internal/queue"
 )
 
@@ -21,6 +21,7 @@ func (r *Random) Pushs(jobs []*queue.Job) []error {
 }
 
 func (r *Random) Pops() ([]*queue.Job, []error) {
+	return make([]*queue.Job, 0), make([]error, 0)
 }
 
 func (r *Random) Len() int {
