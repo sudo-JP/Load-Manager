@@ -26,9 +26,13 @@ func TestFCFS_PushPop(t *testing.T) {
 	for q.Len() != 0 {
 		jobs, errs := q.Pops()
 		
-		for _, err := range(errs) {
+		id := 0
+		for idx, err := range(errs) {
 			if err != nil {
 				t.Errorf("Queue not supposed to error %v", err)
+			} else if jobs[idx].ID != id {
+				t.Errorf("FCFS Queue have to dequeue in correct order")
+				id++
 			}
 		}
 

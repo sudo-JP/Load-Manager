@@ -2,7 +2,7 @@ package algorithms
 
 import (
 	"sync"
-	//"math/rand/v2"
+	"math/rand/v2"
 	"github.com/sudo-JP/Load-Manager/load-manager/internal/queue"
 )
 
@@ -21,7 +21,20 @@ func (r *Random) Pushs(jobs []*queue.Job) []error {
 }
 
 func (r *Random) Pops() ([]*queue.Job, []error) {
-	return make([]*queue.Job, 0), make([]error, 0)
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	n := min(r.Len(), MIN_CAPACITY)
+	jobs := make([]*queue.Job, n)
+	errs := make([]error, n)
+
+	for i := range(n) {
+		idx := rand.IntN(r.Len())
+		jobs[i] = r.jobs[idx]
+		r.jobs = append(r.jobs[:idx], r.jobs[idx + 1:]...)
+		errs[i] = nil 
+	}
+	return jobs, errs
 }
 
 func (r *Random) Len() int {
