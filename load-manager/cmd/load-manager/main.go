@@ -59,8 +59,14 @@ func preRunE(cmd *cobra.Command, args []string) error {
 	switch queueType {
 	case "FCFS":
 		q = algorithms.NewFCFSQueue()
+	case "SJF":
+		q = algorithms.NewSJF()
+	case "LJF":
+		q = algorithms.NewLJF()
+	case "RANDOM":
+		q = algorithms.NewRand()
 	default:
-		return fmt.Errorf("invalid queue type %s. Must be: FCFS", queueType)
+		return fmt.Errorf("invalid queue type %s. Must be: FCFS, SJF, LJF, RANDOM", queueType)
 	}
 
 	// Check for load strat

@@ -8,14 +8,13 @@ import (
 )
 
 type JobPriority struct {
-	priority	int 
-	job			*queue.Job
+	priority int
+	job      *queue.Job
 }
 
-
 type SJF struct {
-	jobs 		[]*JobPriority
-	mutex 		sync.Mutex
+	jobs  []*JobPriority
+	mutex sync.Mutex
 }
 
 func (s *SJF) parent(idx int) int {
@@ -23,11 +22,11 @@ func (s *SJF) parent(idx int) int {
 }
 
 func (s *SJF) left_child(idx int) int {
-	return 2 * idx + 1
+	return 2*idx + 1
 }
 
 func (s *SJF) right_child(idx int) int {
-	return 2 * idx + 2
+	return 2*idx + 2
 }
 
 // Always bubble up last index to top ish
@@ -51,12 +50,12 @@ func (s *SJF) push(job *queue.Job) error {
 		return errors.New("nil job")
 	}
 
-
 	node := &JobPriority{
-		priority: len(job.Payload), 
-		job: job,
+		priority: len(job.Payload),
+		job:      job,
 	}
 	s.jobs = append(s.jobs, node)
+	s.bubbleUp()
 
 	return nil
 }
@@ -66,11 +65,39 @@ func (s *SJF) Pushs(jobs []*queue.Job) []error {
 	defer s.mutex.Unlock()
 
 	errs := make([]error, len(jobs))
-	for i, job := range(jobs) {
-		errs[i] = s.push(job)	
+	for i, job := range jobs {
+		errs[i] = s.push(job)
 	}
 
 	return errs
+}
+
+func (s *SJF) bubbleDown(idx int) {
+	size := len(s.jobs)
+	for {
+		smallest := idx
+		left := s.left_child(idx)
+		right := s.right_child(idx)
+
+		// Check left child
+		if left < size && s.jobs[left].priority < s.jobs[smallest].priority {
+			smallest = left
+		}
+
+		// Check right child
+		if right < size && s.jobs[right].priority < s.jobs[smallest].priority {
+			smallest = right
+		}
+
+		// If current is smallest, heap property satisfied
+		if smallest == idx {
+			break
+		}
+
+		// Swap and continue
+		s.jobs[idx], s.jobs[smallest] = s.jobs[smallest], s.jobs[idx]
+		idx = smallest
+	}
 }
 
 func (s *SJF) pop() (*queue.Job, error) {
@@ -78,28 +105,19 @@ func (s *SJF) pop() (*queue.Job, error) {
 		return nil, errors.New("empty queue")
 	}
 
-	i := 0 
-	job := s.jobs[i].job
-	
-	for i < s.Len() {
-		left := s.left_child(i)
-		right := s.right_child(i)
+	// Get root (smallest)
+	job := s.jobs[0].job
 
-		curr_p := s.jobs[i]
-		left_p := s.jobs[left]
-		right_p := s.jobs[right]
+	// Move last to root
+	lastIdx := len(s.jobs) - 1
+	s.jobs[0] = s.jobs[lastIdx]
+	s.jobs = s.jobs[:lastIdx]
 
-		if curr_p.priority < left_p.priority && curr_p.priority < right_p.priority {
-			break
-		} else if left_p.priority < right_p.priority {
-			s.jobs[i] = s.jobs[left]
-			s.jobs[left] = curr_p
-		} else {
-			s.jobs[i] = s.jobs[right]
-			s.jobs[right] = curr_p
-		}
-		
+	// Restore heap property
+	if len(s.jobs) > 0 {
+		s.bubbleDown(0)
 	}
+
 	return job, nil
 }
 
@@ -111,7 +129,7 @@ func (s *SJF) Pops() ([]*queue.Job, []error) {
 	jobs := make([]*queue.Job, n)
 	errs := make([]error, n)
 
-	for i := range(n) {
+	for i := range n {
 		jobs[i], errs[i] = s.pop()
 	}
 
@@ -126,10 +144,8 @@ func (s *SJF) IsEmpty() bool {
 	return len(s.jobs) == 0
 }
 
-
 func NewSJF() queue.Queue {
 	return &SJF{
-		jobs: make([]*JobPriority, MIN_CAPACITY),
+		jobs: make([]*JobPriority, 0, MIN_CAPACITY),
 	}
 }
-
