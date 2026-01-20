@@ -23,7 +23,7 @@ class AlgorithmExperiment(BaseExperience):
 
         # Algorithm
         nodes = 4
-        for algo in [setup.QueueAlgorithm.FCFS]:
+        for algo in [setup.QueueAlgorithm.FCFS, setup.QueueAlgorithm.SJF, setup.QueueAlgorithm.LJF, setup.QueueAlgorithm.RAND]:
             
             args = setup.ArgsBuilder(n=nodes)
 

@@ -12,6 +12,9 @@ from typing import Self
 
 class QueueAlgorithm(Enum):
     FCFS = 1
+    SJF = 2
+    LJF = 3 
+    RAND = 4
 
 class Selector(Enum):
     RR = 1
@@ -174,6 +177,12 @@ class ArgsBuilder:
         match algorithm:
             case QueueAlgorithm.FCFS: 
                 self.load_args.add('FCFS')
+            case QueueAlgorithm.SJF: 
+                self.load_args.add('SJF')
+            case QueueAlgorithm.LJF: 
+                self.load_args.add('LJF')
+            case QueueAlgorithm.RAND: 
+                self.load_args.add('RAND')
             case _: 
                 raise ValueError('Invalid Queue Algorithm')
         return self
