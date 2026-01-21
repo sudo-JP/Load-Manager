@@ -65,6 +65,8 @@ func preRunE(cmd *cobra.Command, args []string) error {
 		q = algorithms.NewLJF()
 	case "RANDOM":
 		q = algorithms.NewRand()
+	case "STACK":
+		q = algorithms.NewStackQueue()
 	default:
 		return fmt.Errorf("invalid queue type %s. Must be: FCFS, SJF, LJF, RANDOM", queueType)
 	}

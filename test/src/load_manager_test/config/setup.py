@@ -15,6 +15,7 @@ class QueueAlgorithm(Enum):
     SJF = 2
     LJF = 3 
     RAND = 4
+    STACK = 5
 
 class Selector(Enum):
     RR = 1
@@ -183,6 +184,8 @@ class ArgsBuilder:
                 self.load_args.add('LJF')
             case QueueAlgorithm.RAND: 
                 self.load_args.add('RAND')
+            case QueueAlgorithm.STACK: 
+                self.load_args.add('STACK')
             case _: 
                 raise ValueError('Invalid Queue Algorithm')
         return self
